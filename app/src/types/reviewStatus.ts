@@ -1,0 +1,1 @@
+export type ReviewStatus = 'idle' | 'verifying' | 'verified' | 'failed'

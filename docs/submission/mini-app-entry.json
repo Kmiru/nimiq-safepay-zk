@@ -1,0 +1,10 @@
+{
+  "name": "SafePay ZK",
+  "url": "https://REPLACE_WITH_PUBLIC_APP_URL",
+  "type": "nimiq",
+  "description": "Verify Nimiq payment requests with zero-knowledge proofs before sending funds",
+  "logo": "./assets/mini-apps/quetzaltv-safepay-zk.svg",
+  "source": "https://github.com/REPLACE_WITH_GITHUB_USERNAME/nimiq-safepay-zk",
+  "developer": "@quetzaltv",
+  "featured": false
+}
