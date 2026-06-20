@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 export default defineConfig({
-  base: './',
+  base: '/nimiq-safepay-zk/app/',
   plugins: [
     react(),
     nodePolyfills({
@@ -25,6 +25,5 @@ export default defineConfig({
   },
   build: {
     target: 'esnext',
-    chunkSizeWarningLimit: 5000,
   },
 })
