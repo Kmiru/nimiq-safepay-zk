@@ -35,7 +35,9 @@ export async function generateAndVerifyPaymentIntentProof(
 ): Promise<ProofResult> {
   await initNoirWasm()
 
-  const artifactResponse = await fetch('/circuits/payment_intent_match.json')
+  const artifactResponse = await fetch(
+  `${import.meta.env.BASE_URL}circuits/payment_intent_match.json`
+)
 
   if (!artifactResponse.ok) {
     throw new Error(
