@@ -35,8 +35,13 @@ export async function loadEvmProofFiles(): Promise<{
   proof: Hex
   publicInputs: Hex[]
 }> {
-  const proof = await fetchBinaryAsHex('/evm-test/proof.bin')
-  const publicInputsHex = await fetchBinaryAsHex('/evm-test/public_inputs.bin')
+  const proof = await fetchBinaryAsHex(
+  `${import.meta.env.BASE_URL}evm-test/proof.bin`
+)
+
+const publicInputsHex = await fetchBinaryAsHex(
+  `${import.meta.env.BASE_URL}evm-test/public_inputs.bin`
+)
 
   return {
     proof,
