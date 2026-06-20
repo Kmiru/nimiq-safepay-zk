@@ -1,4 +1,8 @@
 # Nimiq SafePay ZK
+## Links
+
+- Landing page: https://kmiru.github.io/nimiq-safepay-zk/
+- GitHub repo: https://github.com/Kmiru/nimiq-safepay-zk
 
 **Verify before you pay.**
 
