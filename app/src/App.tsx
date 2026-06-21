@@ -37,6 +37,29 @@ const IS_GITHUB_PAGES =
 const SHOULD_RUN_LOCAL_EVM = !IS_GITHUB_PAGES
 const DEMO_SHORT_QR_LINK = 'safepay-zk://pay/demo-request?v=1&id=demo-25-nim'
 
+function getFriendlyPaymentLinkError(link: string) {
+  const trimmedLink = link.trim()
+  const lowerLink = trimmedLink.toLowerCase()
+
+  if (lowerLink.startsWith('nimiq:')) {
+    return new Error(
+      'Standard Nimiq QR detected. This is not a SafePay request. Use a SafePay QR or Load Demo Request.'
+    )
+  }
+
+  if (
+    lowerLink.startsWith('http://') ||
+    lowerLink.startsWith('https://') ||
+    lowerLink.startsWith('safepay-zk://')
+  ) {
+    return null
+  }
+
+  return new Error(
+    'Unsupported QR format. SafePay ZK can only verify SafePay payment requests.'
+  )
+}
+
 function App() {
   const paymentReviewRef = useRef<HTMLElement | null>(null)
   const qrPreviewRef = useRef<HTMLDivElement | null>(null)
@@ -163,7 +186,15 @@ function App() {
 
   function parseManualPaymentLink() {
     try {
-      const parsed = parseSafePayPaymentLink(manualPaymentLink.trim())
+      const pastedLink = manualPaymentLink.trim()
+
+      const friendlyError = getFriendlyPaymentLinkError(pastedLink)
+
+      if (friendlyError) {
+        throw friendlyError
+      }
+
+      const parsed = parseSafePayPaymentLink(pastedLink)
 
       handleParseSuccess(parsed)
       scrollToElement(paymentReviewRef)
@@ -178,6 +209,12 @@ function App() {
   function parseScannedPaymentLink(link: string) {
     try {
       const scannedLink = link.trim()
+
+      const friendlyError = getFriendlyPaymentLinkError(scannedLink)
+
+      if (friendlyError) {
+        throw friendlyError
+      }
 
       const linkToParse =
         scannedLink === DEMO_SHORT_QR_LINK ? DEMO_PAYMENT_LINK : scannedLink
@@ -232,22 +269,22 @@ function App() {
   }
 
   async function runDevLocalEvmVerification() {
-  if (!SHOULD_RUN_LOCAL_EVM) {
-    alert(
-      'Local EVM verifier is disabled on GitHub Pages. Use localhost with Anvil, or deploy the verifier to a public HTTPS EVM RPC.'
-    )
+    if (!SHOULD_RUN_LOCAL_EVM) {
+      alert(
+        'Local EVM verifier is disabled on GitHub Pages. Use localhost with Anvil, or deploy the verifier to a public HTTPS EVM RPC.'
+      )
+
+      scrollToElement(devEvmStatusRef)
+
+      return false
+    }
+
+    const verified = await verifyOnLocalEvm()
 
     scrollToElement(devEvmStatusRef)
 
-    return false
+    return verified
   }
-
-  const verified = await verifyOnLocalEvm()
-
-  scrollToElement(devEvmStatusRef)
-
-  return verified
-}
 
   async function sendVerifiedNimiqPayment() {
     if (!paymentReview) {
