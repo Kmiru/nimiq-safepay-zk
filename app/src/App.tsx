@@ -30,6 +30,11 @@ import { ProgressSteps } from './components/ProgressSteps'
 
 const DEMO_QR_PAYLOAD = createSafePayQrPayload(demoHumanSafePayPayload)
 const DEMO_PAYMENT_LINK = createSafePayPaymentLink(DEMO_QR_PAYLOAD)
+const IS_GITHUB_PAGES =
+  typeof window !== 'undefined' &&
+  window.location.hostname === 'kmiru.github.io'
+
+const SHOULD_RUN_LOCAL_EVM = !IS_GITHUB_PAGES
 const DEMO_SHORT_QR_LINK = 'safepay-zk://pay/demo-request?v=1&id=demo-25-nim'
 
 function App() {
@@ -128,15 +133,21 @@ function App() {
 
       if (!zkVerified) {
         throw new Error(
-          'The local proof could not be verified. Do not continue with this payment.'
+          'The browser ZK proof could not be verified. Do not continue with this payment.'
         )
       }
 
-      const evmVerified = await verifyOnLocalEvm()
+      if (SHOULD_RUN_LOCAL_EVM) {
+        const evmVerified = await verifyOnLocalEvm()
 
-      if (!evmVerified) {
-        throw new Error(
-          'The verifier rejected this payment request. Do not continue with this payment.'
+        if (!evmVerified) {
+          throw new Error(
+            'The local EVM verifier rejected this payment request. Do not continue with this payment.'
+          )
+        }
+      } else {
+        console.warn(
+          'Local EVM verifier skipped on GitHub Pages. Browser ZK proof verified.'
         )
       }
 
@@ -221,12 +232,22 @@ function App() {
   }
 
   async function runDevLocalEvmVerification() {
-    const verified = await verifyOnLocalEvm()
+  if (!SHOULD_RUN_LOCAL_EVM) {
+    alert(
+      'Local EVM verifier is disabled on GitHub Pages. Use localhost with Anvil, or deploy the verifier to a public HTTPS EVM RPC.'
+    )
 
     scrollToElement(devEvmStatusRef)
 
-    return verified
+    return false
   }
+
+  const verified = await verifyOnLocalEvm()
+
+  scrollToElement(devEvmStatusRef)
+
+  return verified
+}
 
   async function sendVerifiedNimiqPayment() {
     if (!paymentReview) {
