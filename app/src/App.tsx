@@ -6,6 +6,7 @@ import { ScanPaymentCard } from './components/ScanPaymentCard'
 import { PaymentReviewCard } from './components/PaymentReviewCard'
 import { VerifiedResultCard } from './components/VerifiedResultCard'
 import { DevPanel } from './components/DevPanel'
+import { CreateRequestCard } from './components/CreateRequestCard'
 
 import { useSmoothScroll } from './hooks/useSmoothScroll'
 import { useQrScanner } from './hooks/useQrScanner'
@@ -67,6 +68,7 @@ function App() {
   const devZkStatusRef = useRef<HTMLDivElement | null>(null)
   const devEvmStatusRef = useRef<HTMLDivElement | null>(null)
   const verifiedResultRef = useRef<HTMLElement | null>(null)
+  const paymentCardRef = useRef<HTMLDivElement | null>(null)
   const nimiqProvider = useNimiqProvider()
 
   const { scrollToElement } = useSmoothScroll()
@@ -75,6 +77,9 @@ function App() {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
   const [qrError, setQrError] = useState<string | null>(null)
   const [manualPaymentLink, setManualPaymentLink] = useState('')
+  const [createdRequestQr, setCreatedRequestQr] = useState<string | null>(null)
+  const [createdRequestLink, setCreatedRequestLink] = useState<string | null>(null)
+  const [createdRequestError, setCreatedRequestError] = useState<string | null>(null)
 
   const {
     paymentStatus: nimiqPaymentStatus,
@@ -137,6 +142,39 @@ function App() {
     resetVerificationState()
   }
 
+  async function createSafePayRequest() {
+    try {
+      const dataUrl = await createQrCodeDataUrl(DEMO_SHORT_QR_LINK)
+
+      setCreatedRequestQr(dataUrl)
+      setCreatedRequestLink(DEMO_SHORT_QR_LINK)
+      setCreatedRequestError(null)
+    } catch (error) {
+      console.error(error)
+
+      setCreatedRequestQr(null)
+      setCreatedRequestLink(null)
+      setCreatedRequestError(error instanceof Error ? error.message : String(error))
+    }
+  }
+
+  function loadCreatedRequestForReview() {
+    setManualPaymentLink(DEMO_PAYMENT_LINK)
+    resetVerificationState()
+
+    try {
+      const parsed = parseSafePayPaymentLink(DEMO_PAYMENT_LINK)
+
+      handleParseSuccess(parsed)
+      scrollToElement(paymentReviewRef)
+    } catch (error) {
+      console.error(error)
+
+      handleParseError(error)
+      scrollToElement(paymentReviewRef)
+    }
+  }
+
   async function verifyBeforePayment() {
     try {
       if (!paymentReview) {
@@ -175,7 +213,10 @@ function App() {
       }
 
       markReviewVerified()
-      scrollToElement(verifiedResultRef)
+
+      window.setTimeout(() => {
+        scrollToElement(paymentCardRef)
+      }, 120)
     } catch (error) {
       console.error(error)
 
@@ -326,6 +367,13 @@ function App() {
           onConnect={nimiqProvider.connect}
           onDisconnectLocalState={nimiqProvider.disconnectLocalState}
         />
+        <CreateRequestCard
+          qrDataUrl={createdRequestQr}
+          requestLink={createdRequestLink}
+          error={createdRequestError}
+          onCreateRequest={createSafePayRequest}
+          onLoadRequestForReview={loadCreatedRequestForReview}
+        />
         <ScanPaymentCard
           manualPaymentLink={manualPaymentLink}
           scannerRunning={scannerRunning}
@@ -365,14 +413,17 @@ function App() {
             onResetFlow={resetFlow}
           />
         )}
+        
         {paymentReview && reviewStatus === 'verified' && (
-          <NimiqPaymentCard
-            paymentReview={paymentReview}
-            nimiqConnected={nimiqProvider.connected}
-            privateIntentVerified={reviewStatus === 'verified'}
-            paymentStatus={nimiqPaymentStatus}
-            onSendPayment={sendVerifiedNimiqPayment}
-          />
+          <div ref={paymentCardRef}>
+            <NimiqPaymentCard
+              paymentReview={paymentReview}
+              nimiqConnected={nimiqProvider.connected}
+              privateIntentVerified={reviewStatus === 'verified'}
+              paymentStatus={nimiqPaymentStatus}
+              onSendPayment={sendVerifiedNimiqPayment}
+            />
+          </div>
         )}
 
         {showDevPanel && (
