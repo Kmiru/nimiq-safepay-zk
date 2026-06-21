@@ -2,8 +2,8 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
-export default defineConfig({
-  base: '/nimiq-safepay-zk/app/',
+export default defineConfig(({ command }) => ({
+  base: command === 'build' ? '/nimiq-safepay-zk/app/' : '/',
   plugins: [
     react(),
     nodePolyfills({
@@ -26,4 +26,4 @@ export default defineConfig({
   build: {
     target: 'esnext',
   },
-})
+}))
