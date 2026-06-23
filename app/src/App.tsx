@@ -350,8 +350,11 @@ function App() {
       return
     }
 
+    const intentHash = status.publicInputs[0] ?? null
+
     await sendNimiqPayment({
       paymentReview,
+      intentHash,
       getProvider: nimiqProvider.getProvider,
     })
   }
@@ -375,6 +378,7 @@ function App() {
         paymentReview={paymentReview}
         reviewStatus={reviewStatus}
         reviewError={reviewError}
+        proofPublicInputs={status.publicInputs}
         nimiqConnected={nimiqProvider.connected}
         nimiqConnecting={nimiqProvider.connecting}
         paymentStatus={nimiqPaymentStatus}

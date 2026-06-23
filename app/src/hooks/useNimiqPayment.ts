@@ -12,11 +12,28 @@ type NimiqProvider = Awaited<ReturnType<typeof init>>
 
 type SendPaymentParams = {
   paymentReview: PaymentReview
+  intentHash: string | null | undefined
   getProvider: () => NimiqProvider | null
 }
 
 function isDummyRecipient(recipient: string): boolean {
   return recipient.replaceAll(' ', '') === 'NQ000000000000000000000000000000000000'
+}
+
+function normalizeIntentHash(intentHash: string | null | undefined): string {
+  const value = intentHash?.trim()
+
+  if (!value) {
+    throw new Error(
+      'Missing SafePay intentHash. Verify the payment request before paying.'
+    )
+  }
+
+  if (!value.startsWith('0x')) {
+    return `0x${value}`
+  }
+
+  return value
 }
 
 function getProviderErrorMessage(value: unknown, fallback: string): string {
@@ -52,6 +69,7 @@ export function useNimiqPayment() {
 
   async function sendPayment({
     paymentReview,
+    intentHash,
     getProvider,
   }: SendPaymentParams): Promise<boolean> {
     try {
@@ -84,9 +102,13 @@ export function useNimiqPayment() {
         throw new Error(`Invalid payment amount: ${paymentReview.amountNim} NIM`)
       }
 
-      const transactionResult = await provider.sendBasicTransaction({
+      const safePayIntentHash = normalizeIntentHash(intentHash)
+      const data = `safepay:v1:${safePayIntentHash}`
+
+      const transactionResult = await provider.sendBasicTransactionWithData({
         recipient: paymentReview.recipient,
         value,
+        data,
       })
 
       if (typeof transactionResult !== 'string') {

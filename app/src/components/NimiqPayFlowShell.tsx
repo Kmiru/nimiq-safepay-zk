@@ -1,4 +1,4 @@
-import { useEffect, useState, type RefObject } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import '../styles/nimiqPayFlow.css'
 import {
   clearSafePayActivity,
@@ -41,6 +41,7 @@ type NimiqPayFlowShellProps = {
   paymentReview: PaymentReviewLike | null
   reviewStatus: ReviewStatus
   reviewError: string | null
+  proofPublicInputs: string[]
 
   nimiqConnected: boolean
   nimiqConnecting: boolean
@@ -97,6 +98,7 @@ export function NimiqPayFlowShell({
   paymentReview,
   reviewStatus,
   reviewError,
+  proofPublicInputs,
 
   nimiqConnected,
   nimiqConnecting,
@@ -115,6 +117,8 @@ export function NimiqPayFlowShell({
   const [screen, setScreen] = useState<PayScreen>('scan')
   const [autoVerifyStarted, setAutoVerifyStarted] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
+  const [returningToNimiqPay, setReturningToNimiqPay] = useState(false)
+  const autoVerifyLockRef = useRef(false)
   const [showActivity, setShowActivity] = useState(false)
   const [activityItems, setActivityItems] = useState<SafePayActivityItem[]>(() =>
     getSafePayActivity(),
@@ -126,6 +130,15 @@ export function NimiqPayFlowShell({
     : '0.00'
 
   const txHash = paymentStatus.txHash ?? paymentStatus.transactionHash ?? null
+  const intentHash =
+    paymentReview?.intentHash ??
+    proofPublicInputs[0] ??
+    null
+
+  const nullifier =
+    paymentReview?.nullifier ??
+    proofPublicInputs[1] ??
+    null
 
   const canPay =
     !!paymentReview &&
@@ -151,33 +164,40 @@ export function NimiqPayFlowShell({
     if (!paymentReview) {
       setAutoVerifyStarted(false)
       setShowDetails(false)
+      autoVerifyLockRef.current = false
     }
   }, [paymentReview])
 
   useEffect(() => {
     if (
-      screen === 'preview' &&
-      paymentReview &&
-      reviewStatus === 'idle' &&
-      !autoVerifyStarted
+      screen !== 'preview' ||
+      !paymentReview ||
+      reviewStatus !== 'idle' ||
+      autoVerifyLockRef.current
     ) {
-      setAutoVerifyStarted(true)
-
-      window.setTimeout(() => {
-        onVerifyBeforePayment()
-      }, 450)
+      return
     }
-  }, [
-    screen,
-    paymentReview,
-    reviewStatus,
-    autoVerifyStarted,
-    onVerifyBeforePayment,
-  ])
+
+    autoVerifyLockRef.current = true
+    setAutoVerifyStarted(true)
+
+    window.setTimeout(() => {
+      onVerifyBeforePayment()
+    }, 450)
+  }, [screen, paymentReview, reviewStatus, onVerifyBeforePayment])
 
   useEffect(() => {
-    if (paymentStatus.sent) {
-      setScreen('sent')
+    if (!paymentStatus.sent) return
+
+    setScreen('sent')
+    setReturningToNimiqPay(true)
+
+    const timer = window.setTimeout(() => {
+      closeFlow()
+    }, 1500)
+
+    return () => {
+      window.clearTimeout(timer)
     }
   }, [paymentStatus.sent])
 
@@ -185,7 +205,7 @@ export function NimiqPayFlowShell({
     if (!paymentReview || reviewStatus !== 'verified') return
 
     const id =
-      paymentReview.intentHash ??
+      intentHash ??
       `${paymentReview.recipient}-${paymentReview.amountNim}-${Date.now()}`
 
     const item: SafePayActivityItem = {
@@ -196,7 +216,7 @@ export function NimiqPayFlowShell({
       network: paymentReview.network ?? 'Nimiq',
       verificationStatus: 'verified',
       paymentStatus: 'not_paid',
-      intentHashShort: shortValue(paymentReview.intentHash),
+      intentHashShort: shortValue(intentHash),
     }
 
     saveSafePayActivity(item)
@@ -215,6 +235,9 @@ export function NimiqPayFlowShell({
     setScreen('scan')
     setAutoVerifyStarted(false)
     setShowDetails(false)
+    setShowActivity(false)
+    setReturningToNimiqPay(false)
+    autoVerifyLockRef.current = false
     onResetFlow()
   }
 
@@ -228,6 +251,7 @@ export function NimiqPayFlowShell({
       setScreen('scan')
       setAutoVerifyStarted(false)
       setShowDetails(false)
+      autoVerifyLockRef.current = false
       onResetFlow()
     }
   }
@@ -444,12 +468,12 @@ export function NimiqPayFlowShell({
 
                 <div className="nq-preview-row">
                   <span>Intent hash</span>
-                  <strong>{shortHash(paymentReview?.intentHash)}</strong>
+                  <strong>{shortHash(intentHash ?? undefined)}</strong>
                 </div>
 
                 <div className="nq-preview-row">
                   <span>Nullifier</span>
-                  <strong>{shortHash(paymentReview?.nullifier)}</strong>
+                  <strong>{shortHash(nullifier ?? undefined)}</strong>
                 </div>
 
                 <div className="nq-preview-row">
@@ -485,7 +509,11 @@ export function NimiqPayFlowShell({
           <div className="nq-screen-content nq-sent-content">
             <div className="nq-sent-icon">✓</div>
             <h1 className="nq-screen-title">Payment sent</h1>
-            <p className="nq-screen-subtitle">Returning to Nimiq Pay...</p>
+            <p className="nq-screen-subtitle">
+              {returningToNimiqPay
+                ? 'Returning to Nimiq Pay...'
+                : 'SafePay verification completed.'}
+            </p>
 
             {txHash && (
               <div className="nq-sent-hash">
