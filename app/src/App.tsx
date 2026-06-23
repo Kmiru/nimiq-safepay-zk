@@ -26,6 +26,7 @@ import { NimiqProviderCard } from './components/NimiqProviderCard'
 import { useNimiqPayment } from './hooks/useNimiqPayment'
 import { NimiqPaymentCard } from './components/NimiqPaymentCard'
 import { ProgressSteps } from './components/ProgressSteps'
+import { NimiqPayFlowShell } from './components/NimiqPayFlowShell'
 
 
 
@@ -141,6 +142,22 @@ function App() {
   function loadDemoPaymentLink() {
     setManualPaymentLink(DEMO_PAYMENT_LINK)
     resetVerificationState()
+  }
+
+  function loadDemoPaymentForPreview() {
+    setManualPaymentLink(DEMO_PAYMENT_LINK)
+    resetVerificationState()
+
+    try {
+      const parsed = parseSafePayPaymentLink(DEMO_PAYMENT_LINK)
+
+      handleParseSuccess(parsed)
+      scrollToElement(paymentReviewRef)
+    } catch (error) {
+      console.error(error)
+
+      handleParseError(error)
+    }
   }
 
   async function createSafePayRequest() {
@@ -342,6 +359,39 @@ function App() {
     if (reviewStatus === 'verified') return 'pay'
     if (paymentReview) return 'verify'
     return 'review'
+  }
+
+  const useNimiqPayFlow =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('flow') === 'nimiq'
+
+  if (useNimiqPayFlow) {
+    return (
+      <NimiqPayFlowShell
+        manualPaymentLink={manualPaymentLink}
+        scannerRunning={scannerRunning}
+        scannerError={scannerError}
+        videoRef={videoRef}
+        paymentReview={paymentReview}
+        reviewStatus={reviewStatus}
+        reviewError={reviewError}
+        nimiqConnected={nimiqProvider.connected}
+        nimiqConnecting={nimiqProvider.connecting}
+        paymentStatus={nimiqPaymentStatus}
+        onManualPaymentLinkChange={(value) => {
+          setManualPaymentLink(value)
+          resetVerificationState()
+        }}
+        onParsePaymentLink={parseManualPaymentLink}
+        onLoadDemoPaymentForPreview={loadDemoPaymentForPreview}
+        onStartQrScanner={startQrScanner}
+        onStopQrScanner={stopQrScanner}
+        onVerifyBeforePayment={verifyBeforePayment}
+        onSendPayment={sendVerifiedNimiqPayment}
+        onConnectNimiq={nimiqProvider.connect}
+        onResetFlow={resetFlow}
+      />
+    )
   }
 
   return (
