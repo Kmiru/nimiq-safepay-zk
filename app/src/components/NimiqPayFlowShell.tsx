@@ -37,6 +37,9 @@ type NimiqPayFlowShellProps = {
   scannerRunning: boolean
   scannerError: string | null
   videoRef: RefObject<HTMLVideoElement | null>
+  createdRequestQr: string | null
+  createdRequestLink: string | null
+  createdRequestError: string | null
 
   paymentReview: PaymentReviewLike | null
   reviewStatus: ReviewStatus
@@ -56,6 +59,8 @@ type NimiqPayFlowShellProps = {
   onSendPayment: () => void
   onConnectNimiq: () => void
   onResetFlow: () => void
+  onCreateRequest: () => void
+  onLoadCreatedRequestForReview: () => void
 }
 
 function shortenAddress(address: string) {
@@ -94,6 +99,9 @@ export function NimiqPayFlowShell({
   scannerRunning,
   scannerError,
   videoRef,
+  createdRequestQr,
+  createdRequestLink,
+  createdRequestError,
 
   paymentReview,
   reviewStatus,
@@ -113,10 +121,13 @@ export function NimiqPayFlowShell({
   onSendPayment,
   onConnectNimiq,
   onResetFlow,
+  onCreateRequest,
+  onLoadCreatedRequestForReview,
 }: NimiqPayFlowShellProps) {
   const [screen, setScreen] = useState<PayScreen>('scan')
   const [autoVerifyStarted, setAutoVerifyStarted] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
+  const [showCreateQr, setShowCreateQr] = useState(false)
   const [returningToNimiqPay, setReturningToNimiqPay] = useState(false)
   const autoVerifyLockRef = useRef(false)
   const [showActivity, setShowActivity] = useState(false)
@@ -236,6 +247,7 @@ export function NimiqPayFlowShell({
     setAutoVerifyStarted(false)
     setShowDetails(false)
     setShowActivity(false)
+    setShowCreateQr(false)
     setReturningToNimiqPay(false)
     autoVerifyLockRef.current = false
     onResetFlow()
@@ -351,6 +363,13 @@ export function NimiqPayFlowShell({
             </button>
 
             <div className="nq-secondary-actions">
+              <button
+                className="nq-create-qr-link"
+                onClick={() => setShowCreateQr(true)}
+              >
+                Create QR
+              </button>
+
               <button
                 className="nq-activity-link"
                 onClick={() => {
@@ -532,6 +551,78 @@ export function NimiqPayFlowShell({
           </div>
         </section>
       </div>
+      {showCreateQr && (
+        <div className="nq-activity-overlay">
+          <div className="nq-create-qr-sheet">
+            <div className="nq-activity-header">
+              <div>
+                <h2>Create SafePay QR</h2>
+                <p>Receiver mode. Generate a request for someone to verify.</p>
+              </div>
+
+              <button
+                className="nq-activity-close"
+                onClick={() => setShowCreateQr(false)}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="nq-create-qr-card">
+              <div className="nq-create-qr-icon">QR</div>
+
+              <div>
+                <span>SafePay request</span>
+                <strong>25.00 NIM</strong>
+                <p>
+                  This QR lets another user review and verify the payment before
+                  paying.
+                </p>
+              </div>
+            </div>
+
+            <button className="nq-primary-btn" onClick={onCreateRequest}>
+              Generate SafePay QR
+            </button>
+
+            {createdRequestQr && (
+              <div className="nq-generated-qr-panel">
+                <img
+                  src={createdRequestQr}
+                  alt="Generated SafePay QR"
+                  className="nq-generated-qr-image"
+                />
+
+                <div className="nq-generated-qr-info">
+                  <strong>QR ready</strong>
+                  <span>Scan this from another device or review it here.</span>
+                </div>
+
+                <button
+                  className="nq-primary-btn"
+                  onClick={() => {
+                    setShowCreateQr(false)
+                    onLoadCreatedRequestForReview()
+                  }}
+                >
+                  Review this request
+                </button>
+              </div>
+            )}
+
+            {createdRequestLink && (
+              <details className="nq-created-link-details">
+                <summary>View request link</summary>
+                <code>{createdRequestLink}</code>
+              </details>
+            )}
+
+            {createdRequestError && (
+              <div className="nq-error-text">{createdRequestError}</div>
+            )}
+          </div>
+        </div>
+      )}
       {showActivity && (
         <div className="nq-activity-overlay">
           <div className="nq-activity-sheet">

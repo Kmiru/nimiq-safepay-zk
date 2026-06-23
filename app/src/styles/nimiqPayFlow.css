@@ -728,3 +728,141 @@
 .nq-secondary-actions .nq-dev-demo-btn:hover {
   opacity: 1;
 }
+
+/* ============================================
+   Create SafePay QR Sheet
+   ============================================ */
+
+.nq-create-qr-link {
+  border: 0;
+  background: transparent;
+  color: var(--nq-blue);
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  padding: 8px 10px;
+}
+
+.nq-create-qr-sheet {
+  width: 100%;
+  max-width: 430px;
+  max-height: 86vh;
+  overflow: auto;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.18);
+  padding: 18px;
+}
+
+.nq-create-qr-card {
+  display: flex;
+  gap: 13px;
+  align-items: flex-start;
+  padding: 14px;
+  margin-bottom: 14px;
+  border: 1px solid var(--nq-border);
+  border-radius: 22px;
+  background: rgba(246, 248, 251, 0.82);
+}
+
+.nq-create-qr-icon {
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 15px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, rgba(246, 195, 67, 0.22), rgba(31, 120, 165, 0.12));
+  color: var(--nq-blue);
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+}
+
+.nq-create-qr-card span {
+  display: block;
+  color: var(--nq-muted);
+  font-size: 11px;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.nq-create-qr-card strong {
+  display: block;
+  margin-top: 3px;
+  color: var(--nq-text);
+  font-size: 20px;
+  font-weight: 950;
+  letter-spacing: -0.04em;
+}
+
+.nq-create-qr-card p {
+  margin: 6px 0 0;
+  color: var(--nq-muted);
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 650;
+}
+
+.nq-generated-qr-panel {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid var(--nq-border);
+  border-radius: 24px;
+  background: rgba(246, 248, 251, 0.82);
+}
+
+.nq-generated-qr-image {
+  width: 220px;
+  height: 220px;
+  padding: 10px;
+  border-radius: 22px;
+  background: #fff;
+  border: 1px solid var(--nq-border);
+}
+
+.nq-generated-qr-info {
+  display: grid;
+  gap: 4px;
+  text-align: center;
+}
+
+.nq-generated-qr-info strong {
+  color: var(--nq-text);
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.nq-generated-qr-info span {
+  color: var(--nq-muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.nq-created-link-details {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--nq-border);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.nq-created-link-details summary {
+  cursor: pointer;
+  color: var(--nq-blue);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.nq-created-link-details code {
+  display: block;
+  margin-top: 8px;
+  overflow-wrap: anywhere;
+  color: var(--nq-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}

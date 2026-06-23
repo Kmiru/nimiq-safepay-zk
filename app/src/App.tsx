@@ -375,6 +375,9 @@ function App() {
         scannerRunning={scannerRunning}
         scannerError={scannerError}
         videoRef={videoRef}
+        createdRequestQr={createdRequestQr}
+        createdRequestLink={createdRequestLink}
+        createdRequestError={createdRequestError}
         paymentReview={paymentReview}
         reviewStatus={reviewStatus}
         reviewError={reviewError}
@@ -394,6 +397,8 @@ function App() {
         onSendPayment={sendVerifiedNimiqPayment}
         onConnectNimiq={nimiqProvider.connect}
         onResetFlow={resetFlow}
+        onCreateRequest={createSafePayRequest}
+        onLoadCreatedRequestForReview={loadCreatedRequestForReview}
       />
     )
   }
