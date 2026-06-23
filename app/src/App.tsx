@@ -428,18 +428,16 @@ function App() {
           />
         )}
 
-        {reviewStatus === 'verified' && (
-          <VerifiedResultCard
-            verifiedResultRef={verifiedResultRef}
-            browserProofVerified={status.proofVerified}
-            evmVerified={evmStatus.verified}
-            proofSize={status.proofSize}
-            onResetFlow={resetFlow}
-          />
-        )}
-
         {paymentReview && reviewStatus === 'verified' && (
-          <div ref={paymentCardRef}>
+          <section className="final-flow-card">
+            <VerifiedResultCard
+              verifiedResultRef={verifiedResultRef}
+              browserProofVerified={LOCAL_UI_DEV_MODE ? true : status.proofVerified}
+              evmVerified={LOCAL_UI_DEV_MODE ? true : evmStatus.verified}
+              proofSize={LOCAL_UI_DEV_MODE ? 0 : status.proofSize}
+              onResetFlow={resetFlow}
+            />
+
             <NimiqPaymentCard
               paymentReview={paymentReview}
               nimiqConnected={nimiqProvider.connected}
@@ -447,7 +445,7 @@ function App() {
               paymentStatus={nimiqPaymentStatus}
               onSendPayment={sendVerifiedNimiqPayment}
             />
-          </div>
+          </section>
         )}
 
         {showDevPanel && (

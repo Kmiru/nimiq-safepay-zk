@@ -2125,3 +2125,97 @@ body {
     font-size: 11px;
   }
 }
+
+/* ============================================
+   Final Verified + Pay Flow
+   ============================================ */
+
+.final-flow-card {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(180deg, rgba(31, 184, 132, 0.08), rgba(255, 255, 255, 0.92)),
+    var(--color-card);
+  box-shadow: var(--shadow-card);
+}
+
+.final-flow-card .verified-result-card,
+.final-flow-card .nimiq-payment-card {
+  margin: 0;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  box-shadow: none;
+}
+
+.final-flow-card .verified-result-card {
+  border: 1px solid rgba(31, 184, 132, 0.18);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.final-flow-card .nimiq-payment-card {
+  border: 1px solid var(--color-border);
+  background: #fff;
+}
+
+.final-flow-card .verified-title,
+.final-flow-card .payment-final-header h2 {
+  font-size: 18px;
+  letter-spacing: -0.03em;
+}
+
+.final-flow-card .verified-description,
+.final-flow-card .pay-summary-recipient,
+.final-flow-card .transaction-result-label {
+  font-size: 12px;
+}
+
+.final-flow-card .verified-check-grid,
+.final-flow-card .payment-readiness-grid {
+  gap: 8px;
+}
+
+.final-flow-card .verified-check-card,
+.final-flow-card .payment-readiness-item {
+  padding: 10px;
+}
+
+.final-flow-card .pay-summary-panel {
+  padding: 13px;
+  margin-bottom: 12px;
+}
+
+.final-flow-card .pay-summary-amount {
+  font-size: clamp(24px, 7vw, 34px);
+}
+
+.final-flow-card .payment-main-button {
+  padding: 12px 18px;
+  font-size: 14px;
+}
+
+@media (min-width: 820px) {
+  .final-flow-card {
+    grid-template-columns: 0.95fr 1.05fr;
+    align-items: stretch;
+  }
+
+  .final-flow-card .verified-result-card,
+  .final-flow-card .nimiq-payment-card {
+    height: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .final-flow-card {
+    padding: 14px;
+    gap: 10px;
+  }
+
+  .final-flow-card .verified-result-card,
+  .final-flow-card .nimiq-payment-card {
+    padding: 12px;
+  }
+}
