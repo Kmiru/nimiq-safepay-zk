@@ -20,38 +20,42 @@ export function ScanPaymentCard({
   manualPaymentLink,
   scannerRunning,
   scannerError,
-  qrDataUrl,
-  qrError,
   videoRef,
-  qrPreviewRef,
   onManualPaymentLinkChange,
   onParsePaymentLink,
   onLoadDemoPaymentLink,
   onStartQrScanner,
   onStopQrScanner,
-  onGenerateDemoQr,
 }: ScanPaymentCardProps) {
   const hasPaymentLink = manualPaymentLink.trim().length > 0
 
   return (
-    <section className="card">
-      <h2 className="card-title">Review a SafePay Request</h2>
+    <section className="card scan-payment-card">
+      <div className="scan-card-header">
+        <div>
+          <p className="section-eyebrow">Payer mode</p>
+          <h2 className="card-title">Scan or verify a request</h2>
+          <p className="card-subtitle">
+            Review a SafePay request before sending funds with Nimiq Pay.
+          </p>
+        </div>
+      </div>
 
-      <p className="card-subtitle">
-        Paste a SafePay link or scan a QR code. SafePay will show the payment
-        details before you send funds.
-      </p>
+      <div className="manual-link-panel">
+        <label className="input-label" htmlFor="manualPaymentLink">
+          SafePay request link
+        </label>
 
-      <div className="scan-clean-section">
         <textarea
-          className="textarea-field"
+          id="manualPaymentLink"
+          className="payment-link-input"
           value={manualPaymentLink}
           onChange={(event) => onManualPaymentLinkChange(event.target.value)}
           placeholder="Paste a SafePay link here..."
           rows={2}
         />
 
-        <div className="btn-group">
+        <div className="scan-action-row">
           <button
             className="btn btn-primary"
             onClick={onParsePaymentLink}
@@ -60,28 +64,25 @@ export function ScanPaymentCard({
             Review Payment
           </button>
 
-          <div className="btn-row">
-            <button
-              className="btn btn-outline btn-sm"
-              onClick={onLoadDemoPaymentLink}
-            >
-              Load Demo
-            </button>
-
-            <button
-              className="btn btn-outline btn-sm"
-              onClick={onGenerateDemoQr}
-            >
-              Show QR
-            </button>
-          </div>
+          <button
+            className="btn btn-outline btn-sm"
+            onClick={onLoadDemoPaymentLink}
+          >
+            Load Demo
+          </button>
 
           {!scannerRunning ? (
-            <button className="btn btn-dark btn-sm" onClick={onStartQrScanner}>
+            <button
+              className="btn btn-outline btn-sm"
+              onClick={onStartQrScanner}
+            >
               Scan QR Code
             </button>
           ) : (
-            <button className="btn btn-danger btn-sm" onClick={onStopQrScanner}>
+            <button
+              className="btn btn-outline btn-sm"
+              onClick={onStopQrScanner}
+            >
               Stop Scanner
             </button>
           )}
@@ -89,39 +90,21 @@ export function ScanPaymentCard({
       </div>
 
       <div className={`scanner-preview-panel ${scannerRunning ? 'active' : ''}`}>
-  <div className="scanner-preview-header">
-    <span>QR Scanner Active</span>
-    <small>Point the camera at a SafePay QR code</small>
-  </div>
+        <div className="scanner-preview-header">
+          <span>QR Scanner Active</span>
+          <small>Point the camera at a SafePay QR code</small>
+        </div>
 
-  <video
-    ref={videoRef}
-    className="video-preview"
-    autoPlay
-    muted
-    playsInline
-  />
-</div>
-
-      <p className={`scanner-status ${scannerRunning ? 'active' : ''}`}>
-        Scanner: {scannerRunning ? 'active' : 'off'}
-      </p>
+        <video
+          ref={videoRef}
+          className="video-preview"
+          autoPlay
+          muted
+          playsInline
+        />
+      </div>
 
       {scannerError && <div className="error-block">{scannerError}</div>}
-
-      {qrDataUrl && (
-        <div ref={qrPreviewRef} className="qr-preview-panel">
-          <img
-            className="qr-image"
-            src={qrDataUrl}
-            alt="Demo SafePay QR"
-            width={320}
-            height={320}
-          />
-        </div>
-      )}
-
-      {qrError && <div className="error-block">{qrError}</div>}
     </section>
   )
 }

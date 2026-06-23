@@ -368,31 +368,54 @@ function App() {
           onConnect={nimiqProvider.connect}
           onDisconnectLocalState={nimiqProvider.disconnectLocalState}
         />
-        <CreateRequestCard
-          qrDataUrl={createdRequestQr}
-          requestLink={createdRequestLink}
-          error={createdRequestError}
-          onCreateRequest={createSafePayRequest}
-          onLoadRequestForReview={loadCreatedRequestForReview}
-        />
-        <ScanPaymentCard
-          manualPaymentLink={manualPaymentLink}
-          scannerRunning={scannerRunning}
-          scannerError={scannerError}
-          qrDataUrl={qrDataUrl}
-          qrError={qrError}
-          videoRef={videoRef}
-          qrPreviewRef={qrPreviewRef}
-          onManualPaymentLinkChange={(value) => {
-            setManualPaymentLink(value)
-            resetVerificationState()
-          }}
-          onParsePaymentLink={parseManualPaymentLink}
-          onLoadDemoPaymentLink={loadDemoPaymentLink}
-          onStartQrScanner={startQrScanner}
-          onStopQrScanner={stopQrScanner}
-          onGenerateDemoQr={generatePaymentLinkQr}
-        />
+        <div className="role-grid">
+          <section className="role-section">
+            <div className="role-section-header">
+              <span className="role-step">Receiver</span>
+              <div>
+                <h2>Create Request</h2>
+                <p>Generate a SafePay QR for someone else to verify and pay.</p>
+              </div>
+            </div>
+
+            <CreateRequestCard
+              qrDataUrl={createdRequestQr}
+              requestLink={createdRequestLink}
+              error={createdRequestError}
+              onCreateRequest={createSafePayRequest}
+              onLoadRequestForReview={loadCreatedRequestForReview}
+            />
+          </section>
+
+          <section className="role-section">
+            <div className="role-section-header">
+              <span className="role-step">Payer</span>
+              <div>
+                <h2>Verify Payment</h2>
+                <p>Scan or load a request, review it, then verify before paying.</p>
+              </div>
+            </div>
+
+            <ScanPaymentCard
+              manualPaymentLink={manualPaymentLink}
+              scannerRunning={scannerRunning}
+              scannerError={scannerError}
+              qrDataUrl={qrDataUrl}
+              qrError={qrError}
+              videoRef={videoRef}
+              qrPreviewRef={qrPreviewRef}
+              onManualPaymentLinkChange={(value) => {
+                setManualPaymentLink(value)
+                resetVerificationState()
+              }}
+              onParsePaymentLink={parseManualPaymentLink}
+              onLoadDemoPaymentLink={loadDemoPaymentLink}
+              onStartQrScanner={startQrScanner}
+              onStopQrScanner={stopQrScanner}
+              onGenerateDemoQr={generatePaymentLinkQr}
+            />
+          </section>
+        </div>
 
         {paymentReview && (
           <PaymentReviewCard

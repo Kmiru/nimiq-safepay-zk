@@ -2055,3 +2055,73 @@ body {
     height: 220px;
   }
 }
+
+/* ============================================
+   Receiver / Payer Role Layout
+   ============================================ */
+
+.role-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+
+.role-section {
+  display: grid;
+  gap: 10px;
+}
+
+.role-section-header {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 0 4px;
+}
+
+.role-section-header h2 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 18px;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+
+.role-section-header p {
+  margin: 5px 0 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.role-step {
+  flex: none;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: rgba(31, 184, 132, 0.12);
+  color: #0f8f65;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+@media (min-width: 980px) {
+  .role-grid {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+
+@media (max-width: 560px) {
+  .role-grid {
+    gap: 16px;
+  }
+
+  .role-section-header h2 {
+    font-size: 16px;
+  }
+
+  .role-section-header p {
+    font-size: 11px;
+  }
+}
