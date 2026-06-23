@@ -75,11 +75,11 @@ function getVerificationTitle(reviewStatus: ReviewStatus) {
 
 function getVerificationDescription(reviewStatus: ReviewStatus) {
   if (reviewStatus === 'verified') {
-    return 'The recipient, amount, network, and payment intent match this request.'
+    return 'This payment request matches the verified private intent.'
   }
 
   if (reviewStatus === 'verifying') {
-    return 'Generating private proof and verifying the payment intent.'
+    return 'Checking the payment request before enabling PAY.'
   }
 
   if (reviewStatus === 'failed') {
@@ -306,7 +306,9 @@ export function NimiqPayFlowShell({
 
           <div className="nq-screen-content nq-scan-content">
             <h1 className="nq-screen-title">Scan QR Code</h1>
-            <p className="nq-screen-subtitle">Scan a SafePay payment request</p>
+            <p className="nq-screen-subtitle">
+              Scan a SafePay request and verify it before paying.
+            </p>
             <button
               className={`nq-wallet-status ${nimiqConnected ? 'connected' : ''}`}
               onClick={onConnectNimiq}
@@ -348,19 +350,21 @@ export function NimiqPayFlowShell({
               Enter manually
             </button>
 
-            <button className="nq-dev-demo-btn" onClick={onLoadDemoPaymentForPreview}>
-              Use demo request
-            </button>
+            <div className="nq-secondary-actions">
+              <button
+                className="nq-activity-link"
+                onClick={() => {
+                  setActivityItems(getSafePayActivity())
+                  setShowActivity(true)
+                }}
+              >
+                SafePay activity
+              </button>
 
-            <button
-              className="nq-activity-link"
-              onClick={() => {
-                setActivityItems(getSafePayActivity())
-                setShowActivity(true)
-              }}
-            >
-              SafePay activity
-            </button>
+              <button className="nq-dev-demo-btn" onClick={onLoadDemoPaymentForPreview}>
+                Demo request
+              </button>
+            </div>
 
             {scannerError && <div className="nq-error-text">{scannerError}</div>}
           </div>

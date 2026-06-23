@@ -702,3 +702,29 @@
   font-size: 12px;
   font-weight: 900;
 }
+
+/* ============================================
+   Secondary scan actions
+   ============================================ */
+
+.nq-secondary-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.nq-secondary-actions .nq-activity-link,
+.nq-secondary-actions .nq-dev-demo-btn {
+  padding: 8px 10px;
+}
+
+.nq-secondary-actions .nq-dev-demo-btn {
+  opacity: 0.62;
+}
+
+.nq-secondary-actions .nq-dev-demo-btn:hover {
+  opacity: 1;
+}
