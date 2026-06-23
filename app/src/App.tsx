@@ -384,6 +384,7 @@ function App() {
         proofPublicInputs={status.publicInputs}
         nimiqConnected={nimiqProvider.connected}
         nimiqConnecting={nimiqProvider.connecting}
+        nimiqAccount={nimiqProvider.account}
         paymentStatus={nimiqPaymentStatus}
         onManualPaymentLinkChange={(value) => {
           setManualPaymentLink(value)
@@ -396,6 +397,7 @@ function App() {
         onVerifyBeforePayment={verifyBeforePayment}
         onSendPayment={sendVerifiedNimiqPayment}
         onConnectNimiq={nimiqProvider.connect}
+        onDisconnectNimiq={nimiqProvider.disconnectLocalState}
         onResetFlow={resetFlow}
         onCreateRequest={createSafePayRequest}
         onLoadCreatedRequestForReview={loadCreatedRequestForReview}

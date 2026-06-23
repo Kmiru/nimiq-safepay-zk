@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@aztec/bb.js": "^3.0.0-nightly.20260106",
+    "@nimiq/identicons": "^1.6.2",
     "@nimiq/mini-app-sdk": "^0.1.0",
     "@noir-lang/noir_js": "^1.0.0-beta.21",
     "@noir-lang/noirc_abi": "^1.0.0-beta.21",

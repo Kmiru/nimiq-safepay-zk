@@ -866,3 +866,207 @@
   font-size: 11px;
   line-height: 1.45;
 }
+/* ============================================
+   SafePay Home Screen
+   ============================================ */
+
+.nq-home-content {
+  min-height: calc(100vh - 150px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.nq-app-logo {
+  width: 92px;
+  height: 92px;
+  border-radius: 30px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 18px;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.9), transparent 34%),
+    linear-gradient(135deg, var(--nq-yellow), var(--nq-blue));
+  box-shadow: 0 22px 50px rgba(31, 41, 51, 0.14);
+}
+
+.nq-app-logo-mark {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--nq-green);
+  font-size: 30px;
+  font-weight: 950;
+}
+
+.nq-app-name {
+  margin: 0;
+  color: var(--nq-text);
+  font-size: 32px;
+  line-height: 1;
+  font-weight: 950;
+  letter-spacing: -0.06em;
+  text-align: center;
+}
+
+.nq-app-tagline {
+  margin: 10px 0 22px;
+  color: var(--nq-muted);
+  font-size: 16px;
+  font-weight: 750;
+  text-align: center;
+}
+
+.nq-home-wallet-button {
+  margin-bottom: 16px;
+}
+
+.nq-wallet-card {
+  width: 100%;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 18px;
+  padding: 14px;
+  border: 1px solid rgba(31, 120, 165, 0.16);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: var(--nq-shadow);
+}
+
+.nq-wallet-card.connected {
+  border-color: rgba(34, 168, 115, 0.2);
+}
+
+.nq-wallet-avatar {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(31, 41, 51, 0.08);
+}
+
+.nq-account-identicon {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.nq-account-identicon-placeholder {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background:
+    linear-gradient(90deg, rgba(31, 120, 165, 0.12), rgba(246, 195, 67, 0.22));
+}
+
+.nq-wallet-card span {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--nq-muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.nq-wallet-card strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--nq-text);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.nq-home-actions {
+  width: 100%;
+  display: grid;
+  gap: 10px;
+}
+
+.nq-home-pay-btn,
+.nq-home-create-btn {
+  width: 100%;
+  min-height: 58px;
+  border: 0;
+  border-radius: 24px;
+  font-size: 15px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.nq-home-pay-btn {
+  background: linear-gradient(135deg, var(--nq-yellow), #ffd96f);
+  color: #4f3700;
+  box-shadow: 0 16px 32px rgba(246, 195, 67, 0.3);
+}
+
+.nq-home-create-btn {
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--nq-blue);
+  border: 1px solid rgba(31, 120, 165, 0.18);
+  box-shadow: 0 10px 24px rgba(31, 41, 51, 0.06);
+}
+
+.nq-home-pay-btn:active,
+.nq-home-create-btn:active {
+  transform: scale(0.98);
+}
+
+@media (max-width: 380px) {
+  .nq-app-logo {
+    width: 82px;
+    height: 82px;
+    border-radius: 26px;
+  }
+
+  .nq-app-name {
+    font-size: 28px;
+  }
+
+  .nq-app-tagline {
+    font-size: 15px;
+  }
+}
+/* ============================================
+   Disconnect / Exit controls
+   ============================================ */
+
+.nq-wallet-status.disconnect {
+  color: #b45309;
+  border-color: rgba(180, 83, 9, 0.18);
+}
+
+.nq-wallet-status.disconnect .nq-wallet-dot {
+  box-shadow: 0 0 0 4px rgba(180, 83, 9, 0.1);
+}
+
+.nq-wallet-card.connected {
+  justify-content: center;
+}
+
+.nq-wallet-card.connected strong {
+  text-align: center;
+}
+
+.nq-exit-link {
+  margin-top: 10px;
+  border: 0;
+  background: transparent;
+  color: var(--nq-muted);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 8px 12px;
+}
+
+.nq-exit-link:active {
+  transform: scale(0.97);
+}

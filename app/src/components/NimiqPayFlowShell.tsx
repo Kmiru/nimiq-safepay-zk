@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type RefObject } from 'react'
 import '../styles/nimiqPayFlow.css'
+import { NimiqAccountIcon } from './NimiqAccountIcon'
 import {
   clearSafePayActivity,
   getSafePayActivity,
@@ -10,7 +11,7 @@ import {
   type SafePayActivityItem,
 } from '../lib/safePayActivity'
 
-type PayScreen = 'scan' | 'manual' | 'preview' | 'sent'
+type PayScreen = 'home' | 'scan' | 'manual' | 'preview' | 'sent'
 type ReviewStatus = 'idle' | 'verifying' | 'verified' | 'failed'
 
 type PaymentReviewLike = {
@@ -48,6 +49,7 @@ type NimiqPayFlowShellProps = {
 
   nimiqConnected: boolean
   nimiqConnecting: boolean
+  nimiqAccount: string | null
   paymentStatus: PaymentStatusLike
 
   onManualPaymentLinkChange: (value: string) => void
@@ -58,6 +60,7 @@ type NimiqPayFlowShellProps = {
   onVerifyBeforePayment: () => void
   onSendPayment: () => void
   onConnectNimiq: () => void
+  onDisconnectNimiq: () => void
   onResetFlow: () => void
   onCreateRequest: () => void
   onLoadCreatedRequestForReview: () => void
@@ -110,6 +113,7 @@ export function NimiqPayFlowShell({
 
   nimiqConnected,
   nimiqConnecting,
+  nimiqAccount,
   paymentStatus,
 
   onManualPaymentLinkChange,
@@ -120,11 +124,12 @@ export function NimiqPayFlowShell({
   onVerifyBeforePayment,
   onSendPayment,
   onConnectNimiq,
+  onDisconnectNimiq,
   onResetFlow,
   onCreateRequest,
   onLoadCreatedRequestForReview,
 }: NimiqPayFlowShellProps) {
-  const [screen, setScreen] = useState<PayScreen>('scan')
+  const [screen, setScreen] = useState<PayScreen>('home')
   const [autoVerifyStarted, setAutoVerifyStarted] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
   const [showCreateQr, setShowCreateQr] = useState(false)
@@ -160,10 +165,15 @@ export function NimiqPayFlowShell({
     !paymentStatus.sent
 
   const walletStatusLabel = nimiqConnected
-    ? 'Connected to Nimiq Pay'
+    ? 'Disconnect'
     : nimiqConnecting
       ? 'Connecting to Nimiq Pay...'
       : 'Connect with Nimiq Pay'
+  const walletDisplayName =
+    nimiqConnected && nimiqAccount
+      ? shortRecipient(nimiqAccount)
+      : 'Wallet not connected'
+
 
   useEffect(() => {
     if (paymentReview) {
@@ -243,7 +253,7 @@ export function NimiqPayFlowShell({
   }, [paymentStatus.sent, lastActivityId, txHash])
 
   function closeFlow() {
-    setScreen('scan')
+    setScreen('home')
     setAutoVerifyStarted(false)
     setShowDetails(false)
     setShowActivity(false)
@@ -254,6 +264,11 @@ export function NimiqPayFlowShell({
   }
 
   function goBack() {
+    if (screen === 'scan') {
+      setScreen('home')
+      return
+    }
+
     if (screen === 'manual') {
       setScreen('scan')
       return
@@ -302,18 +317,86 @@ export function NimiqPayFlowShell({
         className="nq-pay-slider"
         style={{
           transform:
-            screen === 'scan'
+            screen === 'home'
               ? 'translateX(0)'
-              : screen === 'manual'
+              : screen === 'scan'
                 ? 'translateX(-100vw)'
-                : screen === 'preview'
+                : screen === 'manual'
                   ? 'translateX(-200vw)'
-                  : 'translateX(-300vw)',
+                  : screen === 'preview'
+                    ? 'translateX(-300vw)'
+                    : 'translateX(-400vw)',
         }}
       >
         <section className="nq-pay-screen">
           <button className="nq-close-btn" onClick={closeFlow}>
             ×
+          </button>
+
+          <div className="nq-screen-content nq-home-content">
+            <div className="nq-app-logo">
+              <div className="nq-app-logo-mark">✓</div>
+            </div>
+
+            <h1 className="nq-app-name">SafePay ZK</h1>
+
+            <p className="nq-app-tagline">Verify before you pay.</p>
+
+            <button
+              className={`nq-wallet-status nq-home-wallet-button ${nimiqConnected ? 'connected disconnect' : ''
+                }`}
+              onClick={nimiqConnected ? onDisconnectNimiq : onConnectNimiq}
+              disabled={nimiqConnecting}
+            >
+              <span className="nq-wallet-dot" />
+              {walletStatusLabel}
+            </button>
+
+            {nimiqConnected && (
+              <div className="nq-wallet-card connected">
+                <NimiqAccountIcon address={nimiqAccount} />
+
+                <div>
+                  <strong>{walletDisplayName}</strong>
+                </div>
+              </div>
+            )}
+
+            <div className="nq-home-actions">
+              <button className="nq-home-pay-btn" onClick={() => setScreen('scan')}>
+                Pay with SafePay
+              </button>
+
+              <button
+                className="nq-home-create-btn"
+                onClick={() => setShowCreateQr(true)}
+              >
+                Create payment request
+              </button>
+            </div>
+            <button className="nq-exit-link" onClick={closeFlow}>
+              Back to Nimiq Pay
+            </button>
+            <div className="nq-secondary-actions">
+              <button
+                className="nq-activity-link"
+                onClick={() => {
+                  setActivityItems(getSafePayActivity())
+                  setShowActivity(true)
+                }}
+              >
+                SafePay activity
+              </button>
+
+              <button className="nq-dev-demo-btn" onClick={onLoadDemoPaymentForPreview}>
+                Demo request
+              </button>
+            </div>
+          </div>
+        </section>
+        <section className="nq-pay-screen">
+          <button className="nq-back-btn" onClick={goBack}>
+            ←
           </button>
 
           <div className="nq-screen-content nq-scan-content">
@@ -361,29 +444,6 @@ export function NimiqPayFlowShell({
             <button className="nq-link-btn" onClick={() => setScreen('manual')}>
               Enter manually
             </button>
-
-            <div className="nq-secondary-actions">
-              <button
-                className="nq-create-qr-link"
-                onClick={() => setShowCreateQr(true)}
-              >
-                Create QR
-              </button>
-
-              <button
-                className="nq-activity-link"
-                onClick={() => {
-                  setActivityItems(getSafePayActivity())
-                  setShowActivity(true)
-                }}
-              >
-                SafePay activity
-              </button>
-
-              <button className="nq-dev-demo-btn" onClick={onLoadDemoPaymentForPreview}>
-                Demo request
-              </button>
-            </div>
 
             {scannerError && <div className="nq-error-text">{scannerError}</div>}
           </div>
