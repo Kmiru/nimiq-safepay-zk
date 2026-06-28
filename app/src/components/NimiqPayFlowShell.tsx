@@ -10,6 +10,14 @@ import {
   updateSafePayActivityPayment,
   type SafePayActivityItem,
 } from '../lib/safePayActivity'
+import {
+  calculateOrderTotalNim,
+  createEmptyOrderItem,
+  hasValidOrderItems,
+  type SafePayOrder,
+  type SafePayOrderDraft,
+  type SafePayOrderItem,
+} from '../lib/safePayOrder'
 
 type PayScreen = 'home' | 'scan' | 'manual' | 'preview' | 'sent'
 type ReviewStatus = 'idle' | 'verifying' | 'verified' | 'failed'
@@ -41,6 +49,8 @@ type NimiqPayFlowShellProps = {
   createdRequestQr: string | null
   createdRequestLink: string | null
   createdRequestError: string | null
+  activeSafePayOrder: SafePayOrder | null
+  incomingSafePayRequestError: string | null
 
   paymentReview: PaymentReviewLike | null
   reviewStatus: ReviewStatus
@@ -62,7 +72,7 @@ type NimiqPayFlowShellProps = {
   onConnectNimiq: () => void
   onDisconnectNimiq: () => void
   onResetFlow: () => void
-  onCreateRequest: () => void
+  onCreateRequest: (orderDraft?: SafePayOrderDraft) => void
   onLoadCreatedRequestForReview: () => void
 }
 
@@ -72,6 +82,21 @@ function shortenAddress(address: string) {
 
 function shortHash(value?: string) {
   return shortValue(value) ?? '—'
+}
+
+function formatOrderExpiration(value?: string) {
+  if (!value) return '—'
+
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      hour: '2-digit',
+      minute: '2-digit',
+      month: 'short',
+      day: '2-digit',
+    }).format(new Date(value))
+  } catch {
+    return '—'
+  }
 }
 
 function getVerificationTitle(reviewStatus: ReviewStatus) {
@@ -105,16 +130,17 @@ export function NimiqPayFlowShell({
   createdRequestQr,
   createdRequestLink,
   createdRequestError,
-
+  activeSafePayOrder,
+  incomingSafePayRequestError,
   paymentReview,
   reviewStatus,
   reviewError,
-  proofPublicInputs,
+  proofPublicInputs = [],
 
   nimiqConnected,
   nimiqConnecting,
   nimiqAccount,
-  paymentStatus,
+  paymentStatus = {},
 
   onManualPaymentLinkChange,
   onParsePaymentLink,
@@ -130,9 +156,14 @@ export function NimiqPayFlowShell({
   onLoadCreatedRequestForReview,
 }: NimiqPayFlowShellProps) {
   const [screen, setScreen] = useState<PayScreen>('home')
-  const [autoVerifyStarted, setAutoVerifyStarted] = useState(false)
+  const [, setAutoVerifyStarted] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
   const [showCreateQr, setShowCreateQr] = useState(false)
+  const [businessName, setBusinessName] = useState('SafePay Merchant')
+  const [orderItems, setOrderItems] = useState<SafePayOrderItem[]>([
+    createEmptyOrderItem(),
+  ])
+  const [expiresInMinutes, setExpiresInMinutes] = useState(15)
   const [returningToNimiqPay, setReturningToNimiqPay] = useState(false)
   const autoVerifyLockRef = useRef(false)
   const [showActivity, setShowActivity] = useState(false)
@@ -173,6 +204,13 @@ export function NimiqPayFlowShell({
     nimiqConnected && nimiqAccount
       ? shortRecipient(nimiqAccount)
       : 'Wallet not connected'
+
+  const orderTotalNim = calculateOrderTotalNim(orderItems)
+  const orderCanGenerate =
+    nimiqConnected &&
+    !!nimiqAccount &&
+    businessName.trim().length > 0 &&
+    hasValidOrderItems(orderItems)
 
 
   useEffect(() => {
@@ -251,6 +289,47 @@ export function NimiqPayFlowShell({
     updateSafePayActivityPayment(lastActivityId, shortValue(txHash))
     setActivityItems(getSafePayActivity())
   }, [paymentStatus.sent, lastActivityId, txHash])
+
+  function updateOrderItem(
+    itemId: string,
+    field: keyof SafePayOrderItem,
+    value: string | number,
+  ) {
+    setOrderItems((current) =>
+      current.map((item) =>
+        item.id === itemId
+          ? {
+            ...item,
+            [field]: value,
+          }
+          : item,
+      ),
+    )
+  }
+
+  function addOrderItem() {
+    setOrderItems((current) => [...current, createEmptyOrderItem()])
+  }
+
+  function removeOrderItem(itemId: string) {
+    setOrderItems((current) => {
+      if (current.length === 1) {
+        return [createEmptyOrderItem()]
+      }
+
+      return current.filter((item) => item.id !== itemId)
+    })
+  }
+
+  function generateOrderQr() {
+    if (!orderCanGenerate) return
+
+    onCreateRequest({
+      businessName,
+      items: orderItems,
+      expiresInMinutes,
+    })
+  }
 
   function closeFlow() {
     setScreen('home')
@@ -359,6 +438,33 @@ export function NimiqPayFlowShell({
                 <div>
                   <strong>{walletDisplayName}</strong>
                 </div>
+              </div>
+            )}
+
+            {incomingSafePayRequestError && (
+              <div className="nq-incoming-request-error">
+                {incomingSafePayRequestError}
+              </div>
+            )}
+
+            {activeSafePayOrder && (
+              <div className="nq-incoming-request-card">
+                <div>
+                  <span>Incoming SafePay request</span>
+                  <strong>{activeSafePayOrder.businessName}</strong>
+                </div>
+
+                <div className="nq-incoming-request-meta">
+                  <span>{activeSafePayOrder.orderNumber}</span>
+                  <strong>{activeSafePayOrder.totalNim} NIM</strong>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowCreateQr(true)}
+                >
+                  View order
+                </button>
               </div>
             )}
 
@@ -616,8 +722,8 @@ export function NimiqPayFlowShell({
           <div className="nq-create-qr-sheet">
             <div className="nq-activity-header">
               <div>
-                <h2>Create SafePay QR</h2>
-                <p>Receiver mode. Generate a request for someone to verify.</p>
+                <h2>Create payment request</h2>
+                <p>Add items, generate a QR, and let the customer verify before paying.</p>
               </div>
 
               <button
@@ -628,22 +734,113 @@ export function NimiqPayFlowShell({
               </button>
             </div>
 
-            <div className="nq-create-qr-card">
-              <div className="nq-create-qr-icon">QR</div>
+            <div className="nq-pos-form">
+              {!nimiqConnected && (
+                <div className="nq-pos-warning">
+                  Connect with Nimiq Pay first. Your connected address will receive this payment.
+                </div>
+              )}
+              <label className="nq-pos-label">
+                Business name
+                <input
+                  className="nq-pos-input"
+                  value={businessName}
+                  onChange={(event) => setBusinessName(event.target.value)}
+                  placeholder="Example: LoonieTaco"
+                />
+              </label>
 
-              <div>
-                <span>SafePay request</span>
-                <strong>25.00 NIM</strong>
-                <p>
-                  This QR lets another user review and verify the payment before
-                  paying.
-                </p>
+              <div className="nq-pos-section-title">
+                <span>Order items</span>
+                <button type="button" onClick={addOrderItem}>
+                  Add item
+                </button>
               </div>
-            </div>
 
-            <button className="nq-primary-btn" onClick={onCreateRequest}>
-              Generate SafePay QR
-            </button>
+              <div className="nq-pos-items">
+                {orderItems.map((item, index) => (
+                  <div className="nq-pos-item" key={item.id}>
+                    <div className="nq-pos-item-header">
+                      <strong>Item {index + 1}</strong>
+
+                      <button type="button" onClick={() => removeOrderItem(item.id)}>
+                        Remove
+                      </button>
+                    </div>
+
+                    <label className="nq-pos-label">
+                      Item name
+                      <input
+                        className="nq-pos-input"
+                        value={item.name}
+                        onChange={(event) =>
+                          updateOrderItem(item.id, 'name', event.target.value)
+                        }
+                        placeholder="Example: Taco al pastor"
+                      />
+                    </label>
+
+                    <div className="nq-pos-item-grid">
+                      <label className="nq-pos-label">
+                        Qty
+                        <input
+                          className="nq-pos-input"
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={item.quantity}
+                          onChange={(event) =>
+                            updateOrderItem(item.id, 'quantity', event.target.value)
+                          }
+                        />
+                      </label>
+
+                      <label className="nq-pos-label">
+                        Price NIM
+                        <input
+                          className="nq-pos-input"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={item.unitPriceNim}
+                          onChange={(event) =>
+                            updateOrderItem(item.id, 'unitPriceNim', event.target.value)
+                          }
+                          placeholder="5.00"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <label className="nq-pos-label">
+                Expires in
+                <select
+                  className="nq-pos-input"
+                  value={expiresInMinutes}
+                  onChange={(event) => setExpiresInMinutes(Number(event.target.value))}
+                >
+                  <option value={5}>5 minutes</option>
+                  <option value={15}>15 minutes</option>
+                  <option value={30}>30 minutes</option>
+                  <option value={60}>1 hour</option>
+                </select>
+              </label>
+
+              <div className="nq-pos-total-card">
+                <span>Total</span>
+                <strong>{orderTotalNim} NIM</strong>
+              </div>
+
+              <button
+                className="nq-primary-btn"
+                onClick={generateOrderQr}
+                disabled={!orderCanGenerate}
+              >
+                Generate SafePay QR
+              </button>
+            </div>
 
             {createdRequestQr && (
               <div className="nq-generated-qr-panel">
@@ -657,6 +854,49 @@ export function NimiqPayFlowShell({
                   <strong>QR ready</strong>
                   <span>Scan this from another device or review it here.</span>
                 </div>
+
+                {activeSafePayOrder && (
+                  <div className="nq-order-summary-card">
+                    <div className="nq-order-summary-header">
+                      <div>
+                        <span>Order</span>
+                        <strong>{activeSafePayOrder.orderNumber}</strong>
+                      </div>
+
+                      <div>
+                        <span>Status</span>
+                        <strong>{activeSafePayOrder.status}</strong>
+                      </div>
+                    </div>
+
+                    <div className="nq-order-business">
+                      <span>Business</span>
+                      <strong>{activeSafePayOrder.businessName}</strong>
+                    </div>
+
+                    <div className="nq-order-items-list">
+                      {activeSafePayOrder.items.map((item) => (
+                        <div className="nq-order-line-item" key={item.id}>
+                          <span>
+                            {item.name} × {item.quantity}
+                          </span>
+                          <strong>
+                            {(Number(item.quantity) * Number(item.unitPriceNim)).toFixed(2)} NIM
+                          </strong>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="nq-order-total-line">
+                      <span>Total</span>
+                      <strong>{activeSafePayOrder.totalNim} NIM</strong>
+                    </div>
+
+                    <div className="nq-order-expiration-line">
+                      Expires {formatOrderExpiration(activeSafePayOrder.expiresAt)}
+                    </div>
+                  </div>
+                )}
 
                 <button
                   className="nq-primary-btn"

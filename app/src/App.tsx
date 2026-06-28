@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './App.css'
 
 import { AppHeader } from './components/AppHeader'
@@ -20,6 +20,14 @@ import {
   parseSafePayPaymentLink,
 } from './lib/safepayQrPayload'
 import { createQrCodeDataUrl } from './lib/qrCode'
+import {
+  createSafePayOrder,
+  createSafePayOrderRequestLink,
+  createSafePayOrderRequestPayload,
+  getSafePayOrderRequestFromUrl,
+  type SafePayOrder,
+  type SafePayOrderDraft,
+} from './lib/safePayOrder'
 import { LOCAL_HONK_VERIFIER_ADDRESS } from './config/localVerifier'
 import { useNimiqProvider } from './hooks/useNimiqProvider'
 import { NimiqProviderCard } from './components/NimiqProviderCard'
@@ -82,6 +90,10 @@ function App() {
   const [createdRequestQr, setCreatedRequestQr] = useState<string | null>(null)
   const [createdRequestLink, setCreatedRequestLink] = useState<string | null>(null)
   const [createdRequestError, setCreatedRequestError] = useState<string | null>(null)
+  const [activeSafePayOrder, setActiveSafePayOrder] =
+    useState<SafePayOrder | null>(null)
+  const [incomingSafePayRequestError, setIncomingSafePayRequestError] =
+    useState<string | null>(null)
 
   const {
     paymentStatus: nimiqPaymentStatus,
@@ -123,6 +135,28 @@ function App() {
     onScan: parseScannedPaymentLink,
   })
 
+  useEffect(() => {
+    try {
+      const payload = getSafePayOrderRequestFromUrl()
+
+      if (!payload) {
+        return
+      }
+
+      console.log('Incoming SafePay order request:', payload)
+
+      setActiveSafePayOrder(payload.order)
+      setIncomingSafePayRequestError(null)
+    } catch (error) {
+      console.error(error)
+
+      setActiveSafePayOrder(null)
+      setIncomingSafePayRequestError(
+        error instanceof Error ? error.message : String(error),
+      )
+    }
+  }, [])
+
 
   function resetVerificationState() {
     resetReviewVerificationState()
@@ -160,12 +194,48 @@ function App() {
     }
   }
 
-  async function createSafePayRequest() {
+  async function createSafePayRequest(orderDraft?: SafePayOrderDraft) {
+    const safePayOrder = orderDraft ? createSafePayOrder(orderDraft) : null
+
+    if (orderDraft && !nimiqProvider.account) {
+      setActiveSafePayOrder(null)
+      setCreatedRequestQr(null)
+      setCreatedRequestLink(null)
+      setCreatedRequestError(
+        'Connect with Nimiq Pay first. Your connected address is used as the payment recipient.',
+      )
+      return
+    }
+
     try {
-      const dataUrl = await createQrCodeDataUrl(DEMO_SHORT_QR_LINK)
+      let requestLink = DEMO_SHORT_QR_LINK
+
+      if (safePayOrder && nimiqProvider.account) {
+        const payload = createSafePayOrderRequestPayload({
+          order: safePayOrder,
+          recipient: nimiqProvider.account,
+          network: 'testnet',
+        })
+
+        const appBaseUrl =
+          import.meta.env.VITE_SAFEPAY_APP_URL ||
+          `${window.location.origin}${import.meta.env.BASE_URL}`
+
+        requestLink = createSafePayOrderRequestLink({
+          payload,
+          appBaseUrl,
+        })
+
+        console.log('SafePay active order:', safePayOrder)
+        console.log('SafePay order request link:', requestLink)
+
+        setActiveSafePayOrder(safePayOrder)
+      }
+
+      const dataUrl = await createQrCodeDataUrl(requestLink)
 
       setCreatedRequestQr(dataUrl)
-      setCreatedRequestLink(DEMO_SHORT_QR_LINK)
+      setCreatedRequestLink(requestLink)
       setCreatedRequestError(null)
     } catch (error) {
       console.error(error)
@@ -378,10 +448,12 @@ function App() {
         createdRequestQr={createdRequestQr}
         createdRequestLink={createdRequestLink}
         createdRequestError={createdRequestError}
+        activeSafePayOrder={activeSafePayOrder}
+        incomingSafePayRequestError={incomingSafePayRequestError}
         paymentReview={paymentReview}
         reviewStatus={reviewStatus}
         reviewError={reviewError}
-        proofPublicInputs={status.publicInputs}
+        proofPublicInputs={status.publicInputs ?? []}
         nimiqConnected={nimiqProvider.connected}
         nimiqConnecting={nimiqProvider.connecting}
         nimiqAccount={nimiqProvider.account}

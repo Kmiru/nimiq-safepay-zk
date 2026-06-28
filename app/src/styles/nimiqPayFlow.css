@@ -866,6 +866,7 @@
   font-size: 11px;
   line-height: 1.45;
 }
+
 /* ============================================
    SafePay Home Screen
    ============================================ */
@@ -1035,6 +1036,7 @@
     font-size: 15px;
   }
 }
+
 /* ============================================
    Disconnect / Exit controls
    ============================================ */
@@ -1069,4 +1071,301 @@
 
 .nq-exit-link:active {
   transform: scale(0.97);
+}
+
+/* ============================================
+   Mini POS Order Builder
+   ============================================ */
+
+.nq-pos-form {
+  display: grid;
+  gap: 14px;
+}
+
+.nq-pos-label {
+  display: grid;
+  gap: 7px;
+  color: var(--nq-muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.nq-pos-input {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid var(--nq-border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--nq-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 750;
+  outline: none;
+  padding: 11px 13px;
+}
+
+.nq-pos-input:focus {
+  border-color: rgba(31, 120, 165, 0.32);
+  box-shadow: 0 0 0 4px rgba(31, 120, 165, 0.08);
+}
+
+.nq-pos-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.nq-pos-section-title span {
+  color: var(--nq-text);
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.nq-pos-section-title button,
+.nq-pos-item-header button {
+  border: 0;
+  background: transparent;
+  color: var(--nq-blue);
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.nq-pos-items {
+  display: grid;
+  gap: 10px;
+}
+
+.nq-pos-item {
+  display: grid;
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid var(--nq-border);
+  border-radius: 20px;
+  background: rgba(246, 248, 251, 0.82);
+}
+
+.nq-pos-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nq-pos-item-header strong {
+  color: var(--nq-text);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.nq-pos-item-header button {
+  color: #dc2626;
+}
+
+.nq-pos-item-grid {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 10px;
+}
+
+.nq-pos-total-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 15px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(246, 195, 67, 0.18), rgba(31, 120, 165, 0.08));
+  border: 1px solid rgba(246, 195, 67, 0.24);
+}
+
+.nq-pos-total-card span {
+  color: var(--nq-muted);
+  font-size: 12px;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.nq-pos-total-card strong {
+  color: var(--nq-text);
+  font-size: 24px;
+  font-weight: 950;
+  letter-spacing: -0.05em;
+}
+
+@media (max-width: 380px) {
+  .nq-pos-item-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================
+   Generated Order Summary
+   ============================================ */
+
+.nq-order-summary-card {
+  width: 100%;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 22px;
+  background: rgba(246, 248, 251, 0.92);
+  border: 1px solid var(--nq-border);
+}
+
+.nq-order-summary-header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+}
+
+.nq-order-summary-header div,
+.nq-order-business {
+  display: grid;
+  gap: 3px;
+}
+
+.nq-order-summary-card span,
+.nq-order-business span {
+  color: var(--nq-muted);
+  font-size: 11px;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.nq-order-summary-card strong,
+.nq-order-business strong {
+  color: var(--nq-text);
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.nq-order-items-list {
+  display: grid;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--nq-border);
+}
+
+.nq-order-line-item,
+.nq-order-total-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.nq-order-line-item span {
+  color: var(--nq-text);
+  font-size: 13px;
+  font-weight: 750;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.nq-order-line-item strong {
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.nq-order-total-line {
+  padding-top: 10px;
+  border-top: 1px solid var(--nq-border);
+}
+
+.nq-order-total-line span {
+  color: var(--nq-muted);
+}
+
+.nq-order-total-line strong {
+  font-size: 18px;
+  letter-spacing: -0.04em;
+}
+
+.nq-order-expiration-line {
+  color: var(--nq-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.nq-pos-warning {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(246, 195, 67, 0.16);
+  border: 1px solid rgba(246, 195, 67, 0.28);
+  color: #7c4a03;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+/* ============================================
+   Incoming SafePay Request
+   ============================================ */
+
+.nq-incoming-request-card,
+.nq-incoming-request-error {
+  width: min(100%, 330px);
+  border-radius: 22px;
+  padding: 14px;
+  text-align: left;
+}
+
+.nq-incoming-request-card {
+  display: grid;
+  gap: 10px;
+  background: rgba(246, 248, 251, 0.92);
+  border: 1px solid var(--nq-border);
+  box-shadow: 0 16px 36px rgba(31, 41, 51, 0.08);
+}
+
+.nq-incoming-request-card span {
+  display: block;
+  color: var(--nq-muted);
+  font-size: 11px;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.nq-incoming-request-card strong {
+  color: var(--nq-text);
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.nq-incoming-request-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--nq-border);
+}
+
+.nq-incoming-request-meta strong {
+  font-size: 18px;
+  letter-spacing: -0.04em;
+}
+
+.nq-incoming-request-card button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--nq-text);
+  color: white;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.nq-incoming-request-error {
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.18);
+  color: #991b1b;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.4;
 }
