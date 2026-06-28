@@ -1369,3 +1369,158 @@
   font-weight: 850;
   line-height: 1.4;
 }
+/* ============================================
+   Order Receipt Sheet
+   ============================================ */
+
+.nq-order-receipt-sheet {
+  width: 100%;
+  max-width: 430px;
+  max-height: 82vh;
+  overflow: auto;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.18);
+  padding: 18px;
+}
+
+.nq-receipt-hero {
+  display: grid;
+  gap: 6px;
+  text-align: center;
+  padding: 18px;
+  margin-bottom: 14px;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top, rgba(246, 195, 67, 0.2), transparent 42%),
+    rgba(246, 248, 251, 0.9);
+  border: 1px solid var(--nq-border);
+}
+
+.nq-receipt-hero span {
+  color: var(--nq-muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.nq-receipt-hero strong {
+  color: var(--nq-text);
+  font-size: 38px;
+  line-height: 1;
+  font-weight: 950;
+  letter-spacing: -0.07em;
+}
+
+.nq-receipt-hero small {
+  color: var(--nq-blue);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.nq-receipt-section {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.nq-receipt-section-title {
+  color: var(--nq-muted);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.nq-receipt-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid var(--nq-border);
+  border-radius: 18px;
+  background: rgba(246, 248, 251, 0.76);
+}
+
+.nq-receipt-line div {
+  display: grid;
+  gap: 3px;
+}
+
+.nq-receipt-line strong {
+  color: var(--nq-text);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.nq-receipt-line span {
+  color: var(--nq-muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.nq-receipt-line > strong {
+  white-space: nowrap;
+}
+
+.nq-receipt-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 15px;
+  margin-bottom: 12px;
+  border-radius: 20px;
+  background: rgba(246, 195, 67, 0.16);
+  border: 1px solid rgba(246, 195, 67, 0.28);
+}
+
+.nq-receipt-total span {
+  color: #7c4a03;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.nq-receipt-total strong {
+  color: var(--nq-text);
+  font-size: 22px;
+  font-weight: 950;
+  letter-spacing: -0.05em;
+}
+
+.nq-receipt-meta-card {
+  display: grid;
+  gap: 0;
+  border: 1px solid var(--nq-border);
+  border-radius: 20px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.nq-receipt-meta-card div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--nq-border);
+}
+
+.nq-receipt-meta-card div:last-child {
+  border-bottom: 0;
+}
+
+.nq-receipt-meta-card span {
+  color: var(--nq-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.nq-receipt-meta-card strong {
+  color: var(--nq-text);
+  font-size: 12px;
+  font-weight: 900;
+  text-align: right;
+}

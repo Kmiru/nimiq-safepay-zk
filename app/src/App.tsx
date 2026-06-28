@@ -92,6 +92,10 @@ function App() {
   const [createdRequestError, setCreatedRequestError] = useState<string | null>(null)
   const [activeSafePayOrder, setActiveSafePayOrder] =
     useState<SafePayOrder | null>(null)
+  const [activeSafePayOrderRecipient, setActiveSafePayOrderRecipient] =
+    useState<string | null>(null)
+  const [activeSafePayOrderNetwork, setActiveSafePayOrderNetwork] =
+    useState<'testnet' | 'mainnet' | null>(null)
   const [incomingSafePayRequestError, setIncomingSafePayRequestError] =
     useState<string | null>(null)
 
@@ -146,11 +150,15 @@ function App() {
       console.log('Incoming SafePay order request:', payload)
 
       setActiveSafePayOrder(payload.order)
+      setActiveSafePayOrderRecipient(payload.recipient)
+      setActiveSafePayOrderNetwork(payload.network)
       setIncomingSafePayRequestError(null)
     } catch (error) {
       console.error(error)
 
       setActiveSafePayOrder(null)
+      setActiveSafePayOrderRecipient(null)
+      setActiveSafePayOrderNetwork(null)
       setIncomingSafePayRequestError(
         error instanceof Error ? error.message : String(error),
       )
@@ -199,6 +207,8 @@ function App() {
 
     if (orderDraft && !nimiqProvider.account) {
       setActiveSafePayOrder(null)
+      setActiveSafePayOrderRecipient(null)
+      setActiveSafePayOrderNetwork(null)
       setCreatedRequestQr(null)
       setCreatedRequestLink(null)
       setCreatedRequestError(
@@ -230,6 +240,8 @@ function App() {
         console.log('SafePay order request link:', requestLink)
 
         setActiveSafePayOrder(safePayOrder)
+        setActiveSafePayOrderRecipient(payload.recipient)
+        setActiveSafePayOrderNetwork(payload.network)
       }
 
       const dataUrl = await createQrCodeDataUrl(requestLink)
@@ -449,6 +461,8 @@ function App() {
         createdRequestLink={createdRequestLink}
         createdRequestError={createdRequestError}
         activeSafePayOrder={activeSafePayOrder}
+        activeSafePayOrderRecipient={activeSafePayOrderRecipient}
+        activeSafePayOrderNetwork={activeSafePayOrderNetwork}
         incomingSafePayRequestError={incomingSafePayRequestError}
         paymentReview={paymentReview}
         reviewStatus={reviewStatus}

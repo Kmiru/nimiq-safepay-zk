@@ -50,6 +50,8 @@ type NimiqPayFlowShellProps = {
   createdRequestLink: string | null
   createdRequestError: string | null
   activeSafePayOrder: SafePayOrder | null
+  activeSafePayOrderRecipient: string | null
+  activeSafePayOrderNetwork: 'testnet' | 'mainnet' | null
   incomingSafePayRequestError: string | null
 
   paymentReview: PaymentReviewLike | null
@@ -131,6 +133,8 @@ export function NimiqPayFlowShell({
   createdRequestLink,
   createdRequestError,
   activeSafePayOrder,
+  activeSafePayOrderRecipient,
+  activeSafePayOrderNetwork,
   incomingSafePayRequestError,
   paymentReview,
   reviewStatus,
@@ -159,6 +163,7 @@ export function NimiqPayFlowShell({
   const [, setAutoVerifyStarted] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
   const [showCreateQr, setShowCreateQr] = useState(false)
+  const [showOrderReceipt, setShowOrderReceipt] = useState(false)
   const [businessName, setBusinessName] = useState('SafePay Merchant')
   const [orderItems, setOrderItems] = useState<SafePayOrderItem[]>([
     createEmptyOrderItem(),
@@ -337,6 +342,7 @@ export function NimiqPayFlowShell({
     setShowDetails(false)
     setShowActivity(false)
     setShowCreateQr(false)
+    setShowOrderReceipt(false)
     setReturningToNimiqPay(false)
     autoVerifyLockRef.current = false
     onResetFlow()
@@ -461,7 +467,7 @@ export function NimiqPayFlowShell({
 
                 <button
                   type="button"
-                  onClick={() => setShowCreateQr(true)}
+                  onClick={() => setShowOrderReceipt(true)}
                 >
                   View order
                 </button>
@@ -717,6 +723,90 @@ export function NimiqPayFlowShell({
           </div>
         </section>
       </div>
+
+      {showOrderReceipt && activeSafePayOrder && (
+        <div className="nq-activity-overlay">
+          <div className="nq-order-receipt-sheet">
+            <div className="nq-activity-header">
+              <div>
+                <h2>Order receipt</h2>
+                <p>Review the payment request before verification.</p>
+              </div>
+
+              <button
+                className="nq-activity-close"
+                onClick={() => setShowOrderReceipt(false)}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="nq-receipt-hero">
+              <span>{activeSafePayOrder.businessName}</span>
+              <strong>{activeSafePayOrder.totalNim} NIM</strong>
+              <small>{activeSafePayOrder.orderNumber}</small>
+            </div>
+
+            <div className="nq-receipt-section">
+              <div className="nq-receipt-section-title">Items</div>
+
+              {activeSafePayOrder.items.map((item) => (
+                <div className="nq-receipt-line" key={item.id}>
+                  <div>
+                    <strong>{item.name}</strong>
+                    <span>
+                      {item.quantity} × {Number(item.unitPriceNim).toFixed(2)} NIM
+                    </span>
+                  </div>
+
+                  <strong>
+                    {(Number(item.quantity) * Number(item.unitPriceNim)).toFixed(2)} NIM
+                  </strong>
+                </div>
+              ))}
+            </div>
+
+            <div className="nq-receipt-total">
+              <span>Total</span>
+              <strong>{activeSafePayOrder.totalNim} NIM</strong>
+            </div>
+
+            <div className="nq-receipt-meta-card">
+              <div>
+                <span>Recipient</span>
+                <strong>
+                  {activeSafePayOrderRecipient
+                    ? shortenAddress(activeSafePayOrderRecipient)
+                    : '—'}
+                </strong>
+              </div>
+
+              <div>
+                <span>Network</span>
+                <strong>{activeSafePayOrderNetwork ?? '—'}</strong>
+              </div>
+
+              <div>
+                <span>Expires</span>
+                <strong>{formatOrderExpiration(activeSafePayOrder.expiresAt)}</strong>
+              </div>
+
+              <div>
+                <span>Status</span>
+                <strong>{activeSafePayOrder.status}</strong>
+              </div>
+            </div>
+
+            <button
+              className="nq-primary-btn"
+              type="button"
+              onClick={() => setShowOrderReceipt(false)}
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      )}
       {showCreateQr && (
         <div className="nq-activity-overlay">
           <div className="nq-create-qr-sheet">
