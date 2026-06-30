@@ -19,7 +19,14 @@ import {
   type SafePayOrderItem,
 } from '../lib/safePayOrder'
 
-type PayScreen = 'home' | 'scan' | 'manual' | 'preview' | 'sent'
+type PayScreen =
+  | 'home'
+  | 'business'
+  | 'personal'
+  | 'scan'
+  | 'manual'
+  | 'preview'
+  | 'sent'
 type ReviewStatus = 'idle' | 'verifying' | 'verified' | 'failed'
 
 type PaymentReviewLike = {
@@ -171,6 +178,8 @@ export function NimiqPayFlowShell({
   const [expiresInMinutes, setExpiresInMinutes] = useState(15)
   const [returningToNimiqPay, setReturningToNimiqPay] = useState(false)
   const autoVerifyLockRef = useRef(false)
+  const incomingRequestAutoOpenRef = useRef(false)
+  const savedActivityIdsRef = useRef<Set<string>>(new Set())
   const [showActivity, setShowActivity] = useState(false)
   const [activityItems, setActivityItems] = useState<SafePayActivityItem[]>(() =>
     getSafePayActivity(),
@@ -217,6 +226,40 @@ export function NimiqPayFlowShell({
     businessName.trim().length > 0 &&
     hasValidOrderItems(orderItems)
 
+  useEffect(() => {
+    if (!activeSafePayOrder) {
+      incomingRequestAutoOpenRef.current = false
+      return
+    }
+
+    if (paymentReview) {
+      return
+    }
+
+    if (createdRequestQr || createdRequestLink) {
+      return
+    }
+
+    if (screen === 'home') {
+      if (incomingRequestAutoOpenRef.current) {
+        return
+      }
+
+      incomingRequestAutoOpenRef.current = true
+      setScreen('personal')
+      return
+    }
+
+    if (screen === 'scan' || screen === 'manual') {
+      setScreen('personal')
+    }
+  }, [
+    activeSafePayOrder,
+    createdRequestLink,
+    createdRequestQr,
+    paymentReview,
+    screen,
+  ])
 
   useEffect(() => {
     if (paymentReview) {
@@ -266,11 +309,26 @@ export function NimiqPayFlowShell({
   }, [paymentStatus.sent])
 
   useEffect(() => {
-    if (!paymentReview || reviewStatus !== 'verified') return
+    if (!paymentReview) return
 
-    const id =
-      intentHash ??
-      `${paymentReview.recipient}-${paymentReview.amountNim}-${Date.now()}`
+    if (reviewStatus !== 'verified' && reviewStatus !== 'failed') {
+      return
+    }
+
+    const id = [
+      intentHash ?? 'no-intent',
+      paymentReview.recipient,
+      paymentReview.amountNim,
+      paymentReview.network ?? 'Nimiq',
+      paymentReview.expiresAtLabel ?? 'no-expiration',
+      reviewStatus,
+    ].join(':')
+
+    if (savedActivityIdsRef.current.has(id)) {
+      return
+    }
+
+    savedActivityIdsRef.current.add(id)
 
     const item: SafePayActivityItem = {
       id,
@@ -278,15 +336,18 @@ export function NimiqPayFlowShell({
       amountNim: Number(paymentReview.amountNim).toFixed(2),
       recipientShort: shortRecipient(paymentReview.recipient),
       network: paymentReview.network ?? 'Nimiq',
-      verificationStatus: 'verified',
+      verificationStatus: reviewStatus,
       paymentStatus: 'not_paid',
       intentHashShort: shortValue(intentHash),
     }
 
     saveSafePayActivity(item)
     setActivityItems(getSafePayActivity())
-    setLastActivityId(id)
-  }, [paymentReview, reviewStatus])
+
+    if (reviewStatus === 'verified') {
+      setLastActivityId(id)
+    }
+  }, [intentHash, paymentReview, reviewStatus])
 
   useEffect(() => {
     if (!paymentStatus.sent || !lastActivityId) return
@@ -349,18 +410,18 @@ export function NimiqPayFlowShell({
   }
 
   function goBack() {
-    if (screen === 'scan') {
+    if (screen === 'business' || screen === 'personal') {
       setScreen('home')
       return
     }
 
-    if (screen === 'manual') {
-      setScreen('scan')
+    if (screen === 'scan' || screen === 'manual') {
+      setScreen('personal')
       return
     }
 
     if (screen === 'preview') {
-      setScreen('scan')
+      setScreen('personal')
       setAutoVerifyStarted(false)
       setShowDetails(false)
       autoVerifyLockRef.current = false
@@ -404,13 +465,17 @@ export function NimiqPayFlowShell({
           transform:
             screen === 'home'
               ? 'translateX(0)'
-              : screen === 'scan'
+              : screen === 'business'
                 ? 'translateX(-100vw)'
-                : screen === 'manual'
+                : screen === 'personal'
                   ? 'translateX(-200vw)'
-                  : screen === 'preview'
+                  : screen === 'scan'
                     ? 'translateX(-300vw)'
-                    : 'translateX(-400vw)',
+                    : screen === 'manual'
+                      ? 'translateX(-400vw)'
+                      : screen === 'preview'
+                        ? 'translateX(-500vw)'
+                        : 'translateX(-600vw)',
         }}
       >
         <section className="nq-pay-screen">
@@ -425,11 +490,70 @@ export function NimiqPayFlowShell({
 
             <h1 className="nq-app-name">SafePay ZK</h1>
 
-            <p className="nq-app-tagline">Verify before you pay.</p>
+            <p className="nq-app-tagline">
+              Create verified payment requests or verify before you pay.
+            </p>
+
+            {incomingSafePayRequestError && (
+              <div className="nq-incoming-request-error">
+                {incomingSafePayRequestError}
+              </div>
+            )}
+
+            <div className="nq-mode-grid">
+              <button
+                className="nq-mode-card business"
+                type="button"
+                onClick={() => setScreen('business')}
+              >
+                <div className="nq-mode-title">Business</div>
+
+                <div className="nq-mode-icon" aria-hidden="true">
+                  <span>▧</span>
+                </div>
+
+                <div className="nq-mode-card-content">
+                  <p>Create payment requests, generate QR codes, and receive NIM.</p>
+                </div>
+              </button>
+
+              <button
+                className="nq-mode-card personal"
+                type="button"
+                onClick={() => setScreen('personal')}
+              >
+                <div className="nq-mode-title">Personal</div>
+
+                <div className="nq-mode-icon" aria-hidden="true">
+                  <span>✓</span>
+                </div>
+
+                <div className="nq-mode-card-content">
+                  <p>Scan, review, verify, and pay SafePay requests.</p>
+                </div>
+              </button>
+            </div>
+
+            <button className="nq-exit-link" onClick={closeFlow}>
+              Back to Nimiq Pay
+            </button>
+          </div>
+        </section>
+
+        <section className="nq-pay-screen">
+          <button className="nq-back-btn" onClick={goBack}>
+            ←
+          </button>
+
+          <h1 className="nq-header-title">Business</h1>
+
+          <div className="nq-screen-content nq-mode-content">
+            <p className="nq-screen-subtitle">
+              Create payment requests, generate QR codes, and receive NIM.
+            </p>
 
             <button
-              className={`nq-wallet-status nq-home-wallet-button ${nimiqConnected ? 'connected disconnect' : ''
-                }`}
+              className={`nq-wallet-status ${nimiqConnected ? 'connected disconnect' : ''}`}
               onClick={nimiqConnected ? onDisconnectNimiq : onConnectNimiq}
               disabled={nimiqConnecting}
             >
@@ -442,14 +566,86 @@ export function NimiqPayFlowShell({
                 <NimiqAccountIcon address={nimiqAccount} />
 
                 <div>
+                  <span>Receiving address</span>
                   <strong>{walletDisplayName}</strong>
                 </div>
               </div>
             )}
 
-            {incomingSafePayRequestError && (
-              <div className="nq-incoming-request-error">
-                {incomingSafePayRequestError}
+            {activeSafePayOrder && (
+              <div className="nq-incoming-request-card">
+                <div>
+                  <span>Active payment request</span>
+                  <strong>{activeSafePayOrder.businessName}</strong>
+                </div>
+
+                <div className="nq-incoming-request-meta">
+                  <span>{activeSafePayOrder.orderNumber}</span>
+                  <strong>{activeSafePayOrder.totalNim} NIM</strong>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowOrderReceipt(true)}
+                >
+                  View receipt
+                </button>
+              </div>
+            )}
+
+            <div className="nq-mode-action-list">
+              <button
+                className="nq-home-create-btn"
+                type="button"
+                onClick={() => setShowCreateQr(true)}
+              >
+                Create payment request
+              </button>
+
+              <button
+                className="nq-link-btn"
+                type="button"
+                onClick={() => setShowCreateQr(true)}
+              >
+                View generated QR
+              </button>
+            </div>
+
+            <div className="nq-mode-note">
+              The customer scans your QR, verifies the request, and pays with Nimiq Pay.
+            </div>
+          </div>
+        </section>
+
+        <section className="nq-pay-screen">
+          <button className="nq-back-btn" onClick={goBack}>
+            ←
+          </button>
+
+          <h1 className="nq-header-title">Personal</h1>
+
+          <div className="nq-screen-content nq-mode-content">
+            <p className="nq-screen-subtitle">
+              Scan, review, verify, and pay SafePay requests.
+            </p>
+
+            <button
+              className={`nq-wallet-status ${nimiqConnected ? 'connected disconnect' : ''}`}
+              onClick={nimiqConnected ? onDisconnectNimiq : onConnectNimiq}
+              disabled={nimiqConnecting}
+            >
+              <span className="nq-wallet-dot" />
+              {walletStatusLabel}
+            </button>
+
+            {nimiqConnected && (
+              <div className="nq-wallet-card connected">
+                <NimiqAccountIcon address={nimiqAccount} />
+
+                <div>
+                  <span>Payment wallet</span>
+                  <strong>{walletDisplayName}</strong>
+                </div>
               </div>
             )}
 
@@ -474,38 +670,47 @@ export function NimiqPayFlowShell({
               </div>
             )}
 
-            <div className="nq-home-actions">
-              <button className="nq-home-pay-btn" onClick={() => setScreen('scan')}>
-                Pay with SafePay
+            <div className="nq-mode-action-list">
+              <button
+                className="nq-home-pay-btn"
+                type="button"
+                onClick={() => setScreen('scan')}
+              >
+                Scan QR
               </button>
 
               <button
                 className="nq-home-create-btn"
-                onClick={() => setShowCreateQr(true)}
+                type="button"
+                onClick={() => setScreen('manual')}
               >
-                Create payment request
+                Enter request manually
               </button>
             </div>
-            <button className="nq-exit-link" onClick={closeFlow}>
-              Back to Nimiq Pay
-            </button>
+
             <div className="nq-secondary-actions">
               <button
                 className="nq-activity-link"
+                type="button"
                 onClick={() => {
                   setActivityItems(getSafePayActivity())
                   setShowActivity(true)
                 }}
               >
-                SafePay activity
+                Verification activity
               </button>
 
-              <button className="nq-dev-demo-btn" onClick={onLoadDemoPaymentForPreview}>
+              <button
+                className="nq-dev-demo-btn"
+                type="button"
+                onClick={onLoadDemoPaymentForPreview}
+              >
                 Demo request
               </button>
             </div>
           </div>
         </section>
+
         <section className="nq-pay-screen">
           <button className="nq-back-btn" onClick={goBack}>
             ←
@@ -730,7 +935,11 @@ export function NimiqPayFlowShell({
             <div className="nq-activity-header">
               <div>
                 <h2>Order receipt</h2>
-                <p>Review the payment request before verification.</p>
+                <p>
+                  {screen === 'business'
+                    ? 'This payment request is ready for the customer to scan.'
+                    : 'Review this SafePay request before verification.'}
+                </p>
               </div>
 
               <button
@@ -797,13 +1006,26 @@ export function NimiqPayFlowShell({
               </div>
             </div>
 
-            <button
-              className="nq-primary-btn"
-              type="button"
-              onClick={() => setShowOrderReceipt(false)}
-            >
-              Continue
-            </button>
+            {screen === 'business' ? (
+              <button
+                className="nq-primary-btn"
+                type="button"
+                onClick={() => setShowOrderReceipt(false)}
+              >
+                Close
+              </button>
+            ) : (
+              <button
+                className="nq-primary-btn"
+                type="button"
+                onClick={() => {
+                  setShowOrderReceipt(false)
+                  onLoadCreatedRequestForReview()
+                }}
+              >
+                Review and verify
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -942,7 +1164,7 @@ export function NimiqPayFlowShell({
 
                 <div className="nq-generated-qr-info">
                   <strong>QR ready</strong>
-                  <span>Scan this from another device or review it here.</span>
+                  <span>Ask the customer to scan this QR. You can view the receipt from Business.</span>
                 </div>
 
                 {activeSafePayOrder && (
@@ -990,12 +1212,13 @@ export function NimiqPayFlowShell({
 
                 <button
                   className="nq-primary-btn"
+                  type="button"
                   onClick={() => {
                     setShowCreateQr(false)
-                    onLoadCreatedRequestForReview()
+                    setScreen('business')
                   }}
                 >
-                  Review this request
+                  Done
                 </button>
               </div>
             )}
@@ -1045,7 +1268,7 @@ export function NimiqPayFlowShell({
 
                     <div className="nq-activity-meta">
                       <span>Verification: {item.verificationStatus}</span>
-                      <span>Payment: {item.paymentStatus}</span>
+                      <span>Payment: {item.verificationStatus === 'failed' ? 'blocked' : item.paymentStatus}</span>
                       {item.intentHashShort && (
                         <span>Intent: {item.intentHashShort}</span>
                       )}
@@ -1061,6 +1284,7 @@ export function NimiqPayFlowShell({
                 className="nq-clear-activity"
                 onClick={() => {
                   clearSafePayActivity()
+                  savedActivityIdsRef.current.clear()
                   setActivityItems([])
                   setLastActivityId(null)
                 }}

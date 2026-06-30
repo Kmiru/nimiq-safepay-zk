@@ -18,6 +18,7 @@ import {
   createSafePayQrPayload,
   createSafePayPaymentLink,
   parseSafePayPaymentLink,
+  type SafePayQrPayload,
 } from './lib/safepayQrPayload'
 import { createQrCodeDataUrl } from './lib/qrCode'
 import {
@@ -27,6 +28,7 @@ import {
   getSafePayOrderRequestFromUrl,
   type SafePayOrder,
   type SafePayOrderDraft,
+  type SafePayOrderRequestPayload,
 } from './lib/safePayOrder'
 import { LOCAL_HONK_VERIFIER_ADDRESS } from './config/localVerifier'
 import { useNimiqProvider } from './hooks/useNimiqProvider'
@@ -44,7 +46,7 @@ const IS_GITHUB_PAGES =
   typeof window !== 'undefined' &&
   window.location.hostname === 'kmiru.github.io'
 
-const LOCAL_UI_DEV_MODE = false //Cuando quieras probar Local EVM real cambia true to false y ejecuta anvil y el verifier localmente. Si quieres probar la UI sin anvil ni verifier, ponlo en true.
+const LOCAL_UI_DEV_MODE = true //Cuando quieras probar Local EVM real cambia true to false y ejecuta anvil y el verifier localmente. Si quieres probar la UI sin anvil ni verifier, ponlo en true.
 const SHOULD_RUN_LOCAL_EVM = !IS_GITHUB_PAGES && !LOCAL_UI_DEV_MODE
 const DEMO_SHORT_QR_LINK = 'safepay-zk://pay/demo-request?v=1&id=demo-25-nim'
 
@@ -149,10 +151,7 @@ function App() {
 
       console.log('Incoming SafePay order request:', payload)
 
-      setActiveSafePayOrder(payload.order)
-      setActiveSafePayOrderRecipient(payload.recipient)
-      setActiveSafePayOrderNetwork(payload.network)
-      setIncomingSafePayRequestError(null)
+      loadSafePayOrderRequestPayload(payload)
     } catch (error) {
       console.error(error)
 
@@ -164,7 +163,107 @@ function App() {
       )
     }
   }, [])
+  function getUnixSecondsFromIso(value: string): number {
+    const timestamp = Math.floor(new Date(value).getTime() / 1000)
 
+    if (!Number.isFinite(timestamp) || timestamp <= 0) {
+      return Math.floor(Date.now() / 1000) + 15 * 60
+    }
+
+    return timestamp
+  }
+
+  function createPaymentReviewPayloadFromSafePayOrderRequest(
+    safePayRequest: SafePayOrderRequestPayload,
+  ): SafePayQrPayload {
+    const network =
+      safePayRequest.network === 'mainnet'
+        ? 'nimiq-mainnet'
+        : 'nimiq-testnet'
+
+    return {
+      app: 'nimiq-safepay-zk',
+      version: 1,
+      payload: {
+        domainSeparator: 'SAFEPAY-ZK-V1',
+        nimiqNetworkId:
+          safePayRequest.network === 'mainnet'
+            ? 'MainAlbatross'
+            : 'TestAlbatross',
+        evmVerifierChainId: 31337,
+        version: 'safepay-zk-v1',
+        type: 'nim-payment-intent',
+        network,
+        recipient: safePayRequest.recipient,
+        amountNim: safePayRequest.order.totalNim,
+        memoSecretHash:
+          '0x0000000000000000000000000000000000000000000000000000000000000001',
+        expiresAt: getUnixSecondsFromIso(safePayRequest.order.expiresAt),
+        nonce:
+          '0x0000000000000000000000000000000000000000000000000000000000000001',
+        salt:
+          '0x0000000000000000000000000000000000000000000000000000000000000001',
+        secret:
+          '0x0000000000000000000000000000000000000000000000000000000000000002',
+      },
+    }
+  }
+
+  function createPaymentReviewPayloadFromOrder(): SafePayQrPayload {
+    if (!activeSafePayOrder) {
+      throw new Error('No SafePay order loaded.')
+    }
+
+    if (!activeSafePayOrderRecipient) {
+      throw new Error('This SafePay request is missing the payment recipient.')
+    }
+
+    return createPaymentReviewPayloadFromSafePayOrderRequest({
+      version: 'safepay-order-v1',
+      type: 'payment-request',
+      recipient: activeSafePayOrderRecipient,
+      network: activeSafePayOrderNetwork ?? 'testnet',
+      order: activeSafePayOrder,
+    })
+  }
+
+  function loadSafePayOrderRequestPayload(
+    safePayRequest: SafePayOrderRequestPayload,
+  ) {
+    setActiveSafePayOrder(safePayRequest.order)
+    setActiveSafePayOrderRecipient(safePayRequest.recipient)
+    setActiveSafePayOrderNetwork(safePayRequest.network)
+    setIncomingSafePayRequestError(null)
+  }
+
+  function loadSafePayOrderForReceipt(
+    safePayRequest: SafePayOrderRequestPayload,
+  ) {
+    loadSafePayOrderRequestPayload(safePayRequest)
+
+    setCreatedRequestQr(null)
+    setCreatedRequestLink(null)
+    setCreatedRequestError(null)
+
+    resetPaymentReview()
+    resetVerificationState()
+  }
+
+
+  function loadSafePayOrderForReview() {
+    try {
+      const parsed = createPaymentReviewPayloadFromOrder()
+
+      resetVerificationState()
+      handleParseSuccess(parsed)
+      scrollToElement(paymentReviewRef)
+    } catch (error) {
+      console.error(error)
+
+      handleParseError(error)
+      scrollToElement(paymentReviewRef)
+    }
+  }
 
   function resetVerificationState() {
     resetReviewVerificationState()
@@ -258,23 +357,6 @@ function App() {
     }
   }
 
-  function loadCreatedRequestForReview() {
-    setManualPaymentLink(DEMO_PAYMENT_LINK)
-    resetVerificationState()
-
-    try {
-      const parsed = parseSafePayPaymentLink(DEMO_PAYMENT_LINK)
-
-      handleParseSuccess(parsed)
-      scrollToElement(paymentReviewRef)
-    } catch (error) {
-      console.error(error)
-
-      handleParseError(error)
-      scrollToElement(paymentReviewRef)
-    }
-  }
-
   async function verifyBeforePayment() {
     try {
       if (!paymentReview) {
@@ -335,6 +417,13 @@ function App() {
         throw friendlyError
       }
 
+      const safePayOrderRequest = getSafePayOrderRequestFromUrl(pastedLink)
+
+      if (safePayOrderRequest) {
+        loadSafePayOrderForReceipt(safePayOrderRequest)
+        return
+      }
+
       const parsed = parseSafePayPaymentLink(pastedLink)
 
       handleParseSuccess(parsed)
@@ -348,33 +437,42 @@ function App() {
   }
 
   function parseScannedPaymentLink(link: string) {
-    try {
-      const scannedLink = link.trim()
+  try {
+    const scannedLink = link.trim()
 
-      const friendlyError = getFriendlyPaymentLinkError(scannedLink)
+    const friendlyError = getFriendlyPaymentLinkError(scannedLink)
 
-      if (friendlyError) {
-        throw friendlyError
-      }
-
-      const linkToParse =
-        scannedLink === DEMO_SHORT_QR_LINK ? DEMO_PAYMENT_LINK : scannedLink
-
-      const parsed = parseSafePayPaymentLink(linkToParse)
-
-      setManualPaymentLink(linkToParse)
-      handleParseSuccess(parsed)
-      setScannerError(null)
-      scrollToElement(paymentReviewRef)
-    } catch (error) {
-      console.error(error)
-
-      setManualPaymentLink(link.trim())
-      handleParseError(error)
-      setScannerError(error instanceof Error ? error.message : String(error))
-      scrollToElement(paymentReviewRef)
+    if (friendlyError) {
+      throw friendlyError
     }
+
+    const linkToParse =
+      scannedLink === DEMO_SHORT_QR_LINK ? DEMO_PAYMENT_LINK : scannedLink
+
+    const safePayOrderRequest = getSafePayOrderRequestFromUrl(linkToParse)
+
+    if (safePayOrderRequest) {
+      setManualPaymentLink(linkToParse)
+      loadSafePayOrderForReceipt(safePayOrderRequest)
+      setScannerError(null)
+      return
+    }
+
+    const parsed = parseSafePayPaymentLink(linkToParse)
+
+    setManualPaymentLink(linkToParse)
+    handleParseSuccess(parsed)
+    setScannerError(null)
+    scrollToElement(paymentReviewRef)
+  } catch (error) {
+    console.error(error)
+
+    setManualPaymentLink(link.trim())
+    handleParseError(error)
+    setScannerError(error instanceof Error ? error.message : String(error))
+    scrollToElement(paymentReviewRef)
   }
+}
 
   async function generatePaymentLinkQr() {
     try {
@@ -486,7 +584,7 @@ function App() {
         onDisconnectNimiq={nimiqProvider.disconnectLocalState}
         onResetFlow={resetFlow}
         onCreateRequest={createSafePayRequest}
-        onLoadCreatedRequestForReview={loadCreatedRequestForReview}
+        onLoadCreatedRequestForReview={loadSafePayOrderForReview}
       />
     )
   }
@@ -530,7 +628,7 @@ function App() {
               requestLink={createdRequestLink}
               error={createdRequestError}
               onCreateRequest={createSafePayRequest}
-              onLoadRequestForReview={loadCreatedRequestForReview}
+              onLoadRequestForReview={loadSafePayOrderForReview}
             />
           </section>
 
