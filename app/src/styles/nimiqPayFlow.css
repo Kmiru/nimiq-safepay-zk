@@ -2,7 +2,7 @@
   --nq-bg: #d0dbe1;
   --nq-card: #ffffff;
   --nq-text: #1f2933;
-  --nq-muted: #7b8491;
+  --nq-muted: #5c7190;
   --nq-border: rgba(31, 41, 51, 0.1);
   --nq-yellow: #f6c343;
   --nq-blue: #1f78a5;
@@ -877,28 +877,21 @@
 }
 
 .nq-app-logo {
-  width: 92px;
-  height: 92px;
-  border-radius: 30px;
+  width: 128px;
+  height: 128px;
+  border-radius: 34px;
   display: grid;
   place-items: center;
   margin-bottom: 18px;
-  background:
-    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.9), transparent 34%),
-    linear-gradient(135deg, var(--nq-yellow), var(--nq-blue));
-  box-shadow: 0 22px 50px rgba(31, 41, 51, 0.14);
+  background: transparent;
+  overflow: hidden;
 }
 
-.nq-app-logo-mark {
-  width: 54px;
-  height: 54px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: rgba(255, 255, 255, 0.92);
-  color: var(--nq-green);
-  font-size: 30px;
-  font-weight: 950;
+.nq-app-logo-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
 }
 
 .nq-app-name {
@@ -906,7 +899,7 @@
   color: var(--nq-text);
   font-size: 32px;
   line-height: 1;
-  font-weight: 950;
+  font-weight: 750;
   letter-spacing: -0.06em;
   text-align: center;
 }
@@ -1019,10 +1012,11 @@
 }
 
 @media (max-width: 380px) {
+
   .nq-app-logo {
-    width: 82px;
-    height: 82px;
-    border-radius: 26px;
+    width: 110px;
+    height: 110px;
+    border-radius: 30px;
   }
 
   .nq-app-name {
@@ -1366,6 +1360,7 @@
   font-weight: 850;
   line-height: 1.4;
 }
+
 /* ============================================
    Order Receipt Sheet
    ============================================ */
@@ -1456,7 +1451,7 @@
   font-weight: 750;
 }
 
-.nq-receipt-line > strong {
+.nq-receipt-line>strong {
   white-space: nowrap;
 }
 
@@ -1521,6 +1516,7 @@
   font-weight: 900;
   text-align: right;
 }
+
 /* ============================================
    Business / Personal Mode Home
    ============================================ */
@@ -1625,22 +1621,21 @@
   font-weight: 500;
 }
 
-.nq-mode-card-content > *:first-child {
+.nq-mode-card-content>*:first-child {
   margin-top: 0;
 }
 
-.nq-mode-card-content > *:last-child {
+.nq-mode-card-content>*:last-child {
   margin-bottom: 0;
 }
 
 .nq-mode-content {
-  min-height: calc(100vh - 160px);
-  padding-top: 96px;
+  min-height: calc(100vh - 150px);
+  padding-top: 66px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 14px;
 }
 
 .nq-mode-content .nq-screen-subtitle {
@@ -1716,5 +1711,566 @@
 
   .nq-mode-card-content {
     font-size: 0.88rem;
+  }
+}
+
+/* ============================================
+   SafePay Mode Logos
+   ============================================ */
+
+.nq-mode-image-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: transparent;
+}
+
+.nq-mode-image-icon img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.nq-mode-card-content span {
+  display: block;
+  margin-bottom: 5px;
+  color: rgba(68, 68, 71, 0.801);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.nq-mode-page-hero {
+  width: 100%;
+  height: auto;
+  border-radius: 24px;
+  display: grid;
+  place-items: center;
+  margin: 28px 0 18px;
+  background: transparent;
+  overflow: hidden;
+}
+
+.nq-mode-page-logo {
+  flex: none;
+  width: 96px;
+  height: 96px;
+  border-radius: 24px;
+  object-fit: cover;
+}
+
+.nq-mode-page-hero span {
+  display: block;
+  margin-bottom: 4px;
+  color: rgba(68, 68, 71, 0.682);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.nq-mode-page-hero h2 {
+  margin: 0;
+  color: var(--nq-text);
+  font-size: 24px;
+  line-height: 1;
+  font-weight: 750;
+  letter-spacing: -0.05em;
+}
+
+.nq-mode-page-hero p {
+  margin: 7px 0 0;
+  color: var(--nq-muted);
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 750;
+}
+
+@media (max-width: 380px) {
+  .nq-mode-page-hero {
+    margin-top: 12px;
+  }
+
+  .nq-mode-page-logo {
+    width: 64px;
+    height: 64px;
+    border-radius: 21px;
+  }
+
+  .nq-mode-page-hero h2 {
+    font-size: 21px;
+  }
+
+  .nq-mode-page-hero p {
+    font-size: 12px;
+  }
+}
+
+/* ============================================
+   QR Scanner Camera Visibility Fix
+   ============================================ */
+
+.nq-scan-content {
+  justify-content: flex-start;
+  padding-top: 58px;
+}
+
+.nq-qr-frame {
+  width: min(82vw, 340px);
+  aspect-ratio: 1 / 1;
+  margin: 18px auto 16px;
+  border-radius: 34px;
+  padding: 10px;
+  background: #101827;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 18px 42px rgba(15, 23, 42, 0.22);
+  overflow: hidden;
+}
+
+.nq-qr-frame.active {
+  background: #050816;
+}
+
+.nq-qr-corners {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 26px;
+  overflow: hidden;
+  background: #050816;
+}
+
+.nq-video-preview {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 260px;
+  opacity: 0;
+  object-fit: cover;
+  background: #050816;
+  border-radius: 26px;
+}
+
+.nq-video-preview.active {
+  opacity: 1;
+}
+
+.nq-qr-placeholder {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.78);
+  background: #050816;
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.nq-qr-frame.active .nq-qr-placeholder {
+  display: none;
+}
+
+@media (max-width: 420px) {
+  .nq-scan-content {
+    padding-top: 46px;
+  }
+
+  .nq-qr-frame {
+    width: min(84vw, 310px);
+    border-radius: 30px;
+  }
+
+  .nq-qr-corners,
+  .nq-video-preview {
+    border-radius: 22px;
+  }
+}
+
+/* ============================================
+   Generated QR Large View
+   ============================================ */
+
+.nq-generated-qr-panel {
+  align-items: center;
+}
+
+.nq-generated-qr-image {
+  width: min(82vw, 340px);
+  height: min(82vw, 340px);
+  max-width: 340px;
+  max-height: 340px;
+  padding: 14px;
+  border-radius: 28px;
+  background: #ffffff;
+  object-fit: contain;
+  box-shadow:
+    0 18px 44px rgba(15, 23, 42, 0.18),
+    inset 0 0 0 1px rgba(15, 23, 42, 0.08);
+}
+
+.nq-fullscreen-qr-btn {
+  margin-top: 10px;
+}
+
+/* ============================================
+   QR Fullscreen Overlay
+   ============================================ */
+
+.nq-qr-fullscreen-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(3, 7, 18, 0.84);
+  backdrop-filter: blur(14px);
+}
+
+.nq-qr-fullscreen-sheet {
+  position: relative;
+  width: min(94vw, 520px);
+  min-height: min(92vh, 720px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 26px 18px 22px;
+  border-radius: 34px;
+  background: #f5f7f9;
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+.nq-qr-fullscreen-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #111827;
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
+}
+
+.nq-qr-fullscreen-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.nq-qr-fullscreen-header span {
+  color: rgba(68, 68, 71, 0.68);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.nq-qr-fullscreen-header strong {
+  margin-top: 4px;
+  color: var(--nq-text);
+  font-size: 22px;
+  font-weight: 950;
+  letter-spacing: -0.04em;
+}
+
+.nq-qr-fullscreen-image {
+  width: min(86vw, 440px);
+  height: min(86vw, 440px);
+  max-width: 440px;
+  max-height: 440px;
+  padding: 18px;
+  border-radius: 30px;
+  background: #ffffff;
+  object-fit: contain;
+  box-shadow:
+    0 18px 46px rgba(15, 23, 42, 0.18),
+    inset 0 0 0 1px rgba(15, 23, 42, 0.08);
+}
+
+.nq-qr-fullscreen-note {
+  max-width: 360px;
+  margin: 0;
+  color: var(--nq-muted);
+  font-size: 13px;
+  line-height: 1.4;
+  font-weight: 750;
+  text-align: center;
+}
+
+@media (max-width: 420px) {
+  .nq-generated-qr-image {
+    width: min(88vw, 330px);
+    height: min(88vw, 330px);
+  }
+
+  .nq-qr-fullscreen-sheet {
+    width: 96vw;
+    min-height: 88vh;
+    border-radius: 30px;
+  }
+
+  .nq-qr-fullscreen-image {
+    width: min(88vw, 390px);
+    height: min(88vw, 390px);
+    padding: 14px;
+    border-radius: 26px;
+  }
+}
+
+
+
+/* ============================================
+   FORCE FIX: Generated QR large + fullscreen
+   Keep this at the END of the file so it overrides older QR rules.
+   ============================================ */
+
+.nq-generated-qr-panel.nq-generated-qr-panel-large,
+.nq-generated-qr-panel {
+  display: grid !important;
+  justify-items: center !important;
+  align-items: center !important;
+  gap: 14px !important;
+  width: 100% !important;
+  margin-top: 16px !important;
+}
+
+.nq-generated-qr-touch-target {
+  display: grid !important;
+  place-items: center !important;
+  width: 100% !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  cursor: zoom-in !important;
+}
+
+.nq-generated-qr-image.nq-generated-qr-image-large,
+.nq-generated-qr-image {
+  display: block !important;
+  width: min(88vw, 370px) !important;
+  height: min(88vw, 370px) !important;
+  max-width: 370px !important;
+  max-height: 370px !important;
+  min-width: 300px !important;
+  min-height: 300px !important;
+  padding: 16px !important;
+  border-radius: 30px !important;
+  background: #ffffff !important;
+  object-fit: contain !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  box-shadow:
+    0 18px 44px rgba(15, 23, 42, 0.18),
+    inset 0 0 0 1px rgba(15, 23, 42, 0.08) !important;
+}
+
+.nq-fullscreen-qr-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: min(88vw, 370px) !important;
+  max-width: 370px !important;
+  min-height: 52px !important;
+  margin: 0 auto 4px !important;
+  border-radius: 20px !important;
+  font-size: 14px !important;
+  font-weight: 950 !important;
+  text-align: center !important;
+  cursor: pointer !important;
+}
+
+.nq-qr-fullscreen-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 999999 !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 16px !important;
+  background: rgba(3, 7, 18, 0.88) !important;
+  backdrop-filter: blur(14px) !important;
+}
+
+.nq-qr-fullscreen-sheet {
+  position: relative !important;
+  width: min(96vw, 560px) !important;
+  min-height: min(92vh, 760px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 18px !important;
+  padding: 58px 16px 24px !important;
+  border-radius: 34px !important;
+  background: #f5f7f9 !important;
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
+}
+
+.nq-qr-fullscreen-close {
+  position: absolute !important;
+  top: 14px !important;
+  right: 14px !important;
+  width: 46px !important;
+  height: 46px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: #ffffff !important;
+  color: #111827 !important;
+  font-size: 30px !important;
+  line-height: 1 !important;
+  font-weight: 900 !important;
+  cursor: pointer !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18) !important;
+}
+
+.nq-qr-fullscreen-header {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+}
+
+.nq-qr-fullscreen-header span {
+  color: rgba(68, 68, 71, 0.68) !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+}
+
+.nq-qr-fullscreen-header strong {
+  margin-top: 4px !important;
+  color: var(--nq-text) !important;
+  font-size: 22px !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.04em !important;
+}
+
+.nq-qr-fullscreen-image {
+  display: block !important;
+  width: min(88vw, 470px) !important;
+  height: min(88vw, 470px) !important;
+  max-width: 470px !important;
+  max-height: 470px !important;
+  min-width: min(84vw, 360px) !important;
+  min-height: min(84vw, 360px) !important;
+  padding: 18px !important;
+  border-radius: 32px !important;
+  background: #ffffff !important;
+  object-fit: contain !important;
+  box-shadow:
+    0 20px 52px rgba(15, 23, 42, 0.2),
+    inset 0 0 0 1px rgba(15, 23, 42, 0.08) !important;
+}
+
+.nq-qr-fullscreen-note {
+  max-width: 380px !important;
+  margin: 0 !important;
+  color: var(--nq-muted) !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  font-weight: 750 !important;
+  text-align: center !important;
+}
+
+@media (max-width: 420px) {
+  .nq-generated-qr-image.nq-generated-qr-image-large,
+  .nq-generated-qr-image {
+    width: min(90vw, 350px) !important;
+    height: min(90vw, 350px) !important;
+    min-width: 300px !important;
+    min-height: 300px !important;
+  }
+
+  .nq-fullscreen-qr-btn {
+    width: min(90vw, 350px) !important;
+  }
+
+  .nq-qr-fullscreen-sheet {
+    width: 96vw !important;
+    min-height: 90vh !important;
+    border-radius: 30px !important;
+  }
+
+  .nq-qr-fullscreen-image {
+    width: min(90vw, 420px) !important;
+    height: min(90vw, 420px) !important;
+    min-width: min(86vw, 340px) !important;
+    min-height: min(86vw, 340px) !important;
+    padding: 14px !important;
+    border-radius: 26px !important;
+  }
+}
+/* ============================================
+   QR normal size restored
+   Keep fullscreen option active
+   ============================================ */
+
+.nq-generated-qr-image {
+  width: 220px !important;
+  height: 220px !important;
+  max-width: 220px !important;
+  max-height: 220px !important;
+  padding: 10px !important;
+  border-radius: 22px !important;
+  background: #ffffff !important;
+  object-fit: contain !important;
+}
+
+.nq-generated-qr-panel {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  margin-top: 16px;
+  padding: 16px;
+}
+
+.nq-fullscreen-qr-btn {
+  margin-top: 4px;
+}
+
+/* Keep the fullscreen QR large */
+.nq-qr-fullscreen-image {
+  width: min(86vw, 440px) !important;
+  height: min(86vw, 440px) !important;
+  max-width: 440px !important;
+  max-height: 440px !important;
+  padding: 18px !important;
+  border-radius: 30px !important;
+  background: #ffffff !important;
+  object-fit: contain !important;
+}
+
+@media (max-width: 420px) {
+  .nq-generated-qr-image {
+    width: 220px !important;
+    height: 220px !important;
+    max-width: 220px !important;
+    max-height: 220px !important;
+  }
+
+  .nq-qr-fullscreen-image {
+    width: min(88vw, 390px) !important;
+    height: min(88vw, 390px) !important;
+    max-width: 390px !important;
+    max-height: 390px !important;
   }
 }

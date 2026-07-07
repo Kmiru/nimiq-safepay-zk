@@ -9,6 +9,7 @@ import {
   shortValue,
   updateSafePayActivityPayment,
   type SafePayActivityItem,
+  type SafePayBusinessOrderRecord,
 } from '../lib/safePayActivity'
 import {
   calculateOrderTotalNim,
@@ -28,6 +29,9 @@ type PayScreen =
   | 'preview'
   | 'sent'
 type ReviewStatus = 'idle' | 'verifying' | 'verified' | 'failed'
+const appLogoUrl = `${import.meta.env.BASE_URL}icons/mini-app-icon-safepayzk.png`
+const businessLogoUrl = `${import.meta.env.BASE_URL}logos/logo-business.png`
+const personalLogoUrl = `${import.meta.env.BASE_URL}logos/logo-personal.png`
 
 type PaymentReviewLike = {
   amountNim: string | number
@@ -59,6 +63,11 @@ type NimiqPayFlowShellProps = {
   activeSafePayOrder: SafePayOrder | null
   activeSafePayOrderRecipient: string | null
   activeSafePayOrderNetwork: 'testnet' | 'mainnet' | null
+  activeRequestPaid: boolean
+  activeRequestPaidTxHash: string | null
+  businessOrders: SafePayBusinessOrderRecord[]
+  blockchainPaymentChecking: boolean
+  blockchainPaymentError: string | null
   incomingSafePayRequestError: string | null
 
   paymentReview: PaymentReviewLike | null
@@ -73,7 +82,6 @@ type NimiqPayFlowShellProps = {
 
   onManualPaymentLinkChange: (value: string) => void
   onParsePaymentLink: () => void
-  onLoadDemoPaymentForPreview: () => void
   onStartQrScanner: () => void
   onStopQrScanner: () => void
   onVerifyBeforePayment: () => void
@@ -83,6 +91,10 @@ type NimiqPayFlowShellProps = {
   onResetFlow: () => void
   onCreateRequest: (orderDraft?: SafePayOrderDraft) => void
   onLoadCreatedRequestForReview: () => void
+  onRefreshBusinessOrders: () => void
+  onOpenBusinessOrder: (record: SafePayBusinessOrderRecord) => void | Promise<void>
+  onCheckBusinessOrderPayment: (record: SafePayBusinessOrderRecord) => void | Promise<void>
+  onClearBusinessOrders: () => void
 }
 
 function shortenAddress(address: string) {
@@ -142,6 +154,11 @@ export function NimiqPayFlowShell({
   activeSafePayOrder,
   activeSafePayOrderRecipient,
   activeSafePayOrderNetwork,
+  activeRequestPaid,
+  activeRequestPaidTxHash,
+  businessOrders,
+  blockchainPaymentChecking,
+  blockchainPaymentError,
   incomingSafePayRequestError,
   paymentReview,
   reviewStatus,
@@ -155,7 +172,6 @@ export function NimiqPayFlowShell({
 
   onManualPaymentLinkChange,
   onParsePaymentLink,
-  onLoadDemoPaymentForPreview,
   onStartQrScanner,
   onStopQrScanner,
   onVerifyBeforePayment,
@@ -165,11 +181,16 @@ export function NimiqPayFlowShell({
   onResetFlow,
   onCreateRequest,
   onLoadCreatedRequestForReview,
+  onRefreshBusinessOrders,
+  onOpenBusinessOrder,
+  onCheckBusinessOrderPayment,
+  onClearBusinessOrders,
 }: NimiqPayFlowShellProps) {
   const [screen, setScreen] = useState<PayScreen>('home')
   const [, setAutoVerifyStarted] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
   const [showCreateQr, setShowCreateQr] = useState(false)
+  const [showQrFullscreen, setShowQrFullscreen] = useState(false)
   const [showOrderReceipt, setShowOrderReceipt] = useState(false)
   const [businessName, setBusinessName] = useState('SafePay Merchant')
   const [orderItems, setOrderItems] = useState<SafePayOrderItem[]>([
@@ -181,6 +202,7 @@ export function NimiqPayFlowShell({
   const incomingRequestAutoOpenRef = useRef(false)
   const savedActivityIdsRef = useRef<Set<string>>(new Set())
   const [showActivity, setShowActivity] = useState(false)
+  const [showBusinessOrders, setShowBusinessOrders] = useState(false)
   const [activityItems, setActivityItems] = useState<SafePayActivityItem[]>(() =>
     getSafePayActivity(),
   )
@@ -191,6 +213,8 @@ export function NimiqPayFlowShell({
     : '0.00'
 
   const txHash = paymentStatus.txHash ?? paymentStatus.transactionHash ?? null
+  const paidTxHash = activeRequestPaidTxHash ?? txHash
+  const activeOrderIsPaid = activeRequestPaid || activeSafePayOrder?.status === 'paid'
   const intentHash =
     paymentReview?.intentHash ??
     proofPublicInputs[0] ??
@@ -205,6 +229,8 @@ export function NimiqPayFlowShell({
     !!paymentReview &&
     reviewStatus === 'verified' &&
     nimiqConnected &&
+    !activeOrderIsPaid &&
+    !blockchainPaymentChecking &&
     !paymentReview.isExpired &&
     !paymentStatus.sending &&
     !paymentStatus.sent
@@ -352,9 +378,13 @@ export function NimiqPayFlowShell({
   useEffect(() => {
     if (!paymentStatus.sent || !lastActivityId) return
 
-    updateSafePayActivityPayment(lastActivityId, shortValue(txHash))
+    updateSafePayActivityPayment(
+      lastActivityId,
+      shortValue(txHash),
+      nimiqAccount ? shortRecipient(nimiqAccount) : undefined,
+    )
     setActivityItems(getSafePayActivity())
-  }, [paymentStatus.sent, lastActivityId, txHash])
+  }, [paymentStatus.sent, lastActivityId, txHash, nimiqAccount])
 
   function updateOrderItem(
     itemId: string,
@@ -397,12 +427,26 @@ export function NimiqPayFlowShell({
     })
   }
 
+  function openBusinessOrdersSheet() {
+    onRefreshBusinessOrders()
+    setShowBusinessOrders(true)
+  }
+
+  async function handleOpenBusinessOrder(record: SafePayBusinessOrderRecord) {
+    await onOpenBusinessOrder(record)
+    setShowBusinessOrders(false)
+    setShowCreateQr(true)
+    setScreen('business')
+  }
+
   function closeFlow() {
     setScreen('home')
     setAutoVerifyStarted(false)
     setShowDetails(false)
     setShowActivity(false)
+    setShowBusinessOrders(false)
     setShowCreateQr(false)
+    setShowQrFullscreen(false)
     setShowOrderReceipt(false)
     setReturningToNimiqPay(false)
     autoVerifyLockRef.current = false
@@ -449,6 +493,8 @@ export function NimiqPayFlowShell({
   function getMainButtonLabel() {
     if (paymentStatus.sending) return 'Opening Nimiq Pay...'
     if (paymentStatus.sent) return 'Payment Sent'
+    if (activeOrderIsPaid) return 'Already paid'
+    if (blockchainPaymentChecking) return 'Checking payment...'
     if (!paymentReview) return 'PAY'
     if (reviewStatus === 'verifying') return 'Verifying...'
     if (reviewStatus === 'failed') return 'Payment blocked'
@@ -479,13 +525,14 @@ export function NimiqPayFlowShell({
         }}
       >
         <section className="nq-pay-screen">
-          <button className="nq-close-btn" onClick={closeFlow}>
-            ×
-          </button>
 
           <div className="nq-screen-content nq-home-content">
             <div className="nq-app-logo">
-              <div className="nq-app-logo-mark">✓</div>
+              <img
+                src={appLogoUrl}
+                alt="SafePay ZK"
+                className="nq-app-logo-image"
+              />
             </div>
 
             <h1 className="nq-app-name">SafePay ZK</h1>
@@ -506,10 +553,10 @@ export function NimiqPayFlowShell({
                 type="button"
                 onClick={() => setScreen('business')}
               >
-                <div className="nq-mode-title">Business</div>
+                <div className="nq-mode-title">Request Payment</div>
 
-                <div className="nq-mode-icon" aria-hidden="true">
-                  <span>▧</span>
+                <div className="nq-mode-icon nq-mode-image-icon" aria-hidden="true">
+                  <img src={businessLogoUrl} alt="" />
                 </div>
 
                 <div className="nq-mode-card-content">
@@ -522,10 +569,10 @@ export function NimiqPayFlowShell({
                 type="button"
                 onClick={() => setScreen('personal')}
               >
-                <div className="nq-mode-title">Personal</div>
+                <div className="nq-mode-title">Verify Payment</div>
 
-                <div className="nq-mode-icon" aria-hidden="true">
-                  <span>✓</span>
+                <div className="nq-mode-icon nq-mode-image-icon" aria-hidden="true">
+                  <img src={personalLogoUrl} alt="" />
                 </div>
 
                 <div className="nq-mode-card-content">
@@ -533,10 +580,6 @@ export function NimiqPayFlowShell({
                 </div>
               </button>
             </div>
-
-            <button className="nq-exit-link" onClick={closeFlow}>
-              Back to Nimiq Pay
-            </button>
           </div>
         </section>
 
@@ -545,12 +588,18 @@ export function NimiqPayFlowShell({
             ←
           </button>
 
-          <h1 className="nq-header-title">Business</h1>
-
           <div className="nq-screen-content nq-mode-content">
-            <p className="nq-screen-subtitle">
-              Create payment requests, generate QR codes, and receive NIM.
-            </p>
+            <div className="nq-mode-page-hero">
+              <img
+                src={businessLogoUrl}
+                alt="Request Payment"
+                className="nq-mode-page-logo"
+              />
+              <div>
+                <h2>Request Payment</h2>
+                <p>Create payment requests, generate QR codes, and receive NIM.</p>
+              </div>
+            </div>
 
             <button
               className={`nq-wallet-status ${nimiqConnected ? 'connected disconnect' : ''}`}
@@ -575,7 +624,7 @@ export function NimiqPayFlowShell({
             {activeSafePayOrder && (
               <div className="nq-incoming-request-card">
                 <div>
-                  <span>Active payment request</span>
+                  <span>{activeOrderIsPaid ? 'Paid payment request' : 'Active payment request'}</span>
                   <strong>{activeSafePayOrder.businessName}</strong>
                 </div>
 
@@ -611,6 +660,16 @@ export function NimiqPayFlowShell({
               </button>
             </div>
 
+            <div className="nq-secondary-actions">
+              <button
+                className="nq-activity-link"
+                type="button"
+                onClick={openBusinessOrdersSheet}
+              >
+                Order history
+              </button>
+            </div>
+
             <div className="nq-mode-note">
               The customer scans your QR, verifies the request, and pays with Nimiq Pay.
             </div>
@@ -622,12 +681,19 @@ export function NimiqPayFlowShell({
             ←
           </button>
 
-          <h1 className="nq-header-title">Personal</h1>
-
           <div className="nq-screen-content nq-mode-content">
-            <p className="nq-screen-subtitle">
-              Scan, review, verify, and pay SafePay requests.
-            </p>
+            <div className="nq-mode-page-hero">
+              <img
+                src={personalLogoUrl}
+                alt="Verify Payment"
+                className="nq-mode-page-logo"
+              />
+
+              <div>
+                <h2>Verify Payment</h2>
+                <p>Scan, review, verify, and pay SafePay requests.</p>
+              </div>
+            </div>
 
             <button
               className={`nq-wallet-status ${nimiqConnected ? 'connected disconnect' : ''}`}
@@ -652,7 +718,7 @@ export function NimiqPayFlowShell({
             {activeSafePayOrder && (
               <div className="nq-incoming-request-card">
                 <div>
-                  <span>Incoming SafePay request</span>
+                  <span>{activeOrderIsPaid ? 'Paid SafePay request' : 'Incoming SafePay request'}</span>
                   <strong>{activeSafePayOrder.businessName}</strong>
                 </div>
 
@@ -665,7 +731,7 @@ export function NimiqPayFlowShell({
                   type="button"
                   onClick={() => setShowOrderReceipt(true)}
                 >
-                  View order
+                  {activeOrderIsPaid ? 'Already paid' : 'View order'}
                 </button>
               </div>
             )}
@@ -698,14 +764,6 @@ export function NimiqPayFlowShell({
                 }}
               >
                 Verification activity
-              </button>
-
-              <button
-                className="nq-dev-demo-btn"
-                type="button"
-                onClick={onLoadDemoPaymentForPreview}
-              >
-                Demo request
               </button>
             </div>
           </div>
@@ -894,6 +952,8 @@ export function NimiqPayFlowShell({
                 !paymentReview ||
                 paymentStatus.sending ||
                 paymentStatus.sent ||
+                activeOrderIsPaid ||
+                blockchainPaymentChecking ||
                 reviewStatus === 'verifying' ||
                 reviewStatus === 'failed' ||
                 reviewStatus !== 'verified' ||
@@ -936,9 +996,11 @@ export function NimiqPayFlowShell({
               <div>
                 <h2>Order receipt</h2>
                 <p>
-                  {screen === 'business'
-                    ? 'This payment request is ready for the customer to scan.'
-                    : 'Review this SafePay request before verification.'}
+                  {activeOrderIsPaid
+                    ? 'This wallet has already paid this SafePay request.'
+                    : screen === 'business'
+                      ? 'This payment request is ready for the customer to scan.'
+                      : 'Review this SafePay request before verification.'}
                 </p>
               </div>
 
@@ -1002,17 +1064,24 @@ export function NimiqPayFlowShell({
 
               <div>
                 <span>Status</span>
-                <strong>{activeSafePayOrder.status}</strong>
+                <strong>{activeOrderIsPaid ? 'paid' : activeSafePayOrder.status}</strong>
               </div>
+
+              {paidTxHash && (
+                <div>
+                  <span>Paid tx</span>
+                  <strong>{shortHash(paidTxHash)}</strong>
+                </div>
+              )}
             </div>
 
-            {screen === 'business' ? (
+            {screen === 'business' || activeOrderIsPaid ? (
               <button
                 className="nq-primary-btn"
                 type="button"
                 onClick={() => setShowOrderReceipt(false)}
               >
-                Close
+                {activeOrderIsPaid ? 'Already paid' : 'Close'}
               </button>
             ) : (
               <button
@@ -1040,7 +1109,10 @@ export function NimiqPayFlowShell({
 
               <button
                 className="nq-activity-close"
-                onClick={() => setShowCreateQr(false)}
+                onClick={() => {
+                  setShowCreateQr(false)
+                  setShowQrFullscreen(false)
+                }}
               >
                 ×
               </button>
@@ -1162,6 +1234,14 @@ export function NimiqPayFlowShell({
                   className="nq-generated-qr-image"
                 />
 
+                <button
+                  className="nq-link-btn nq-fullscreen-qr-btn"
+                  type="button"
+                  onClick={() => setShowQrFullscreen(true)}
+                >
+                  View QR full screen
+                </button>
+
                 <div className="nq-generated-qr-info">
                   <strong>QR ready</strong>
                   <span>Ask the customer to scan this QR. You can view the receipt from Business.</span>
@@ -1177,7 +1257,7 @@ export function NimiqPayFlowShell({
 
                       <div>
                         <span>Status</span>
-                        <strong>{activeSafePayOrder.status}</strong>
+                        <strong>{activeOrderIsPaid ? 'paid' : activeSafePayOrder.status}</strong>
                       </div>
                     </div>
 
@@ -1215,6 +1295,7 @@ export function NimiqPayFlowShell({
                   type="button"
                   onClick={() => {
                     setShowCreateQr(false)
+                    setShowQrFullscreen(false)
                     setScreen('business')
                   }}
                 >
@@ -1232,6 +1313,116 @@ export function NimiqPayFlowShell({
 
             {createdRequestError && (
               <div className="nq-error-text">{createdRequestError}</div>
+            )}
+          </div>
+        </div>
+      )}
+      {showQrFullscreen && createdRequestQr && (
+        <div className="nq-qr-fullscreen-overlay">
+          <div className="nq-qr-fullscreen-sheet">
+            <button
+              className="nq-qr-fullscreen-close"
+              type="button"
+              onClick={() => setShowQrFullscreen(false)}
+            >
+              ×
+            </button>
+
+            <div className="nq-qr-fullscreen-header">
+              <span>SafePay request QR</span>
+              <strong>Scan to verify and pay</strong>
+            </div>
+
+            <img
+              src={createdRequestQr}
+              alt="SafePay request QR full screen"
+              className="nq-qr-fullscreen-image"
+            />
+
+            <p className="nq-qr-fullscreen-note">
+              Ask the customer to scan this QR with SafePay inside Nimiq Pay.
+            </p>
+          </div>
+        </div>
+      )}
+      {showBusinessOrders && (
+        <div className="nq-activity-overlay">
+          <div className="nq-activity-sheet">
+            <div className="nq-activity-header">
+              <div>
+                <h2>Business orders</h2>
+                <p>Payment requests created by this SafePay app.</p>
+              </div>
+
+              <button
+                className="nq-activity-close"
+                onClick={() => setShowBusinessOrders(false)}
+              >
+                ×
+              </button>
+            </div>
+
+            {businessOrders.length === 0 ? (
+              <div className="nq-empty-activity">
+                No payment requests created yet.
+              </div>
+            ) : (
+              <div className="nq-activity-list">
+                {businessOrders.map((order) => (
+                  <div className="nq-activity-item" key={order.id}>
+                    <div className="nq-activity-main">
+                      <strong>{order.totalNim} NIM</strong>
+                      <span>{order.orderNumber}</span>
+                    </div>
+
+                    <div className="nq-activity-meta">
+                      <span>Business: {order.businessName}</span>
+                      <span>Status: {order.status === 'paid' ? 'Paid' : 'Active'}</span>
+                      {order.status === 'paid' && (
+                        <span>Payment confirmed on blockchain</span>
+                      )}
+                      <span>Recipient: {shortenAddress(order.recipientAddress)}</span>
+                      <span>Expires: {formatOrderExpiration(order.expiresAt)}</span>
+                      {order.txHash && <span>Tx: {shortHash(order.txHash)}</span>}
+                    </div>
+
+                    <button
+                      className="nq-primary-mini-btn"
+                      type="button"
+                      onClick={() => handleOpenBusinessOrder(order)}
+                    >
+                      Open QR
+                    </button>
+
+                    {order.status !== 'paid' && (
+                      <button
+                        className="nq-primary-mini-btn"
+                        type="button"
+                        onClick={() => onCheckBusinessOrderPayment(order)}
+                        disabled={blockchainPaymentChecking}
+                      >
+                        {blockchainPaymentChecking ? 'Checking blockchain...' : 'Confirm payment on blockchain'}
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {blockchainPaymentError && (
+              <div className="nq-error-text">{blockchainPaymentError}</div>
+            )}
+
+            {businessOrders.length > 0 && (
+              <button
+                className="nq-clear-activity"
+                onClick={() => {
+                  onClearBusinessOrders()
+                  setShowBusinessOrders(false)
+                }}
+              >
+                Clear order history
+              </button>
             )}
           </div>
         </div>
@@ -1272,6 +1463,7 @@ export function NimiqPayFlowShell({
                       {item.intentHashShort && (
                         <span>Intent: {item.intentHashShort}</span>
                       )}
+                      {item.payerShort && <span>Payer: {item.payerShort}</span>}
                       {item.txHashShort && <span>Tx: {item.txHashShort}</span>}
                     </div>
                   </div>

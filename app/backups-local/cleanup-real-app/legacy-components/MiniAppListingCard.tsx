@@ -1,8 +1,15 @@
+const miniAppIconUrl = `${import.meta.env.BASE_URL}icons/mini-app-icon.png`
+
 export function MiniAppListingCard() {
   return (
     <section className="card mini-app-listing-card">
       <div className="mini-app-listing-header">
-        <div className="mini-app-listing-logo">◈</div>
+        <div className="mini-app-listing-logo">
+          <img
+            src={miniAppIconUrl}
+            alt="SafePay ZK mini app icon"
+          />
+        </div>
 
         <div>
           <h2 className="mini-app-listing-title">SafePay ZK</h2>
@@ -11,8 +18,8 @@ export function MiniAppListingCard() {
       </div>
 
       <p className="mini-app-listing-description">
-        Verify Nimiq payment requests with zero-knowledge proofs before sending
-        funds.
+        Create verified payment requests, scan SafePay QR codes, and verify
+        before paying with Nimiq Pay.
       </p>
 
       <div className="mini-app-listing-meta">
@@ -38,12 +45,12 @@ export function MiniAppListingCard() {
         <pre className="code-block">
 {`{
   "name": "SafePay ZK",
-  "url": "https://REPLACE_WITH_PUBLIC_APP_URL",
+  "url": "https://www.safepayzk.com/",
   "type": "nimiq",
-  "description": "Verify Nimiq payment requests with zero-knowledge proofs before sending funds",
-  "logo": "./assets/mini-apps/quetzaltv-safepay-zk.svg",
-  "source": "https://github.com/REPLACE_WITH_GITHUB_USERNAME/nimiq-safepay-zk",
-  "developer": "@quetzaltv",
+  "description": "Create verified payment requests, scan SafePay QR codes, and verify before paying with Nimiq Pay",
+  "logo": "https://www.safepayzk.com/icons/mini-app-icon.png",
+  "source": "https://github.com/Kmiru/nimiq-safepay-zk",
+  "developer": "@kmiru",
   "featured": false
 }`}
         </pre>

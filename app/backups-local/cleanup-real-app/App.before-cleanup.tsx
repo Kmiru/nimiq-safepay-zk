@@ -1,13 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
 import './App.css'
 
+import { AppHeader } from './components/AppHeader'
+import { ScanPaymentCard } from './components/ScanPaymentCard'
+import { PaymentReviewCard } from './components/PaymentReviewCard'
+import { VerifiedResultCard } from './components/VerifiedResultCard'
+import { DevPanel } from './components/DevPanel'
+import { CreateRequestCard } from './components/CreateRequestCard'
 
 import { useSmoothScroll } from './hooks/useSmoothScroll'
 import { useQrScanner } from './hooks/useQrScanner'
 import { useSafePayVerification } from './hooks/useSafePayVerification'
 import { usePaymentReview } from './hooks/usePaymentReview'
 
+import { demoHumanSafePayPayload } from './lib/humanSafePayPayload'
 import {
+  createSafePayQrPayload,
+  createSafePayPaymentLink,
   parseSafePayPaymentLink,
   type SafePayQrPayload,
 } from './lib/safepayQrPayload'
@@ -21,34 +30,25 @@ import {
   type SafePayOrderDraft,
   type SafePayOrderRequestPayload,
 } from './lib/safePayOrder'
-import {
-  clearSafePayBusinessOrders,
-  getSafePayBusinessOrders,
-  getSafePayPaidRequest,
-  getWalletPaidRequestId,
-  saveSafePayBusinessOrder,
-  saveSafePayPaidRequest,
-  updateSafePayBusinessOrderStatus,
-  shortValue,
-  type SafePayBusinessOrderRecord,
-} from './lib/safePayActivity'
-import { findSafePayPaymentOnNimiqBlockchain } from './lib/nimiqBlockchainPayments'
-import { demoPoseidonPublicValues } from './lib/intentHash'
 import { LOCAL_HONK_VERIFIER_ADDRESS } from './config/localVerifier'
 import { useNimiqProvider } from './hooks/useNimiqProvider'
+import { NimiqProviderCard } from './components/NimiqProviderCard'
 import { useNimiqPayment } from './hooks/useNimiqPayment'
+import { NimiqPaymentCard } from './components/NimiqPaymentCard'
+import { ProgressSteps } from './components/ProgressSteps'
 import { NimiqPayFlowShell } from './components/NimiqPayFlowShell'
 
 
 
+const DEMO_QR_PAYLOAD = createSafePayQrPayload(demoHumanSafePayPayload)
+const DEMO_PAYMENT_LINK = createSafePayPaymentLink(DEMO_QR_PAYLOAD)
 const IS_GITHUB_PAGES =
   typeof window !== 'undefined' &&
   window.location.hostname === 'kmiru.github.io'
 
 const LOCAL_UI_DEV_MODE = true //Cuando quieras probar Local EVM real cambia true to false y ejecuta anvil y el verifier localmente. Si quieres probar la UI sin anvil ni verifier, ponlo en true.
 const SHOULD_RUN_LOCAL_EVM = !IS_GITHUB_PAGES && !LOCAL_UI_DEV_MODE
-const SAFE_PAY_PAYMENT_NETWORK: 'testnet' | 'mainnet' =
-  import.meta.env.VITE_NIMIQ_NETWORK === 'testnet' ? 'testnet' : 'mainnet'
+const DEMO_SHORT_QR_LINK = 'safepay-zk://pay/demo-request?v=1&id=demo-25-nim'
 
 function getFriendlyPaymentLinkError(link: string) {
   const trimmedLink = link.trim()
@@ -75,11 +75,19 @@ function getFriendlyPaymentLinkError(link: string) {
 
 function App() {
   const paymentReviewRef = useRef<HTMLElement | null>(null)
+  const qrPreviewRef = useRef<HTMLDivElement | null>(null)
+  const devPanelRef = useRef<HTMLElement | null>(null)
+  const devZkStatusRef = useRef<HTMLDivElement | null>(null)
+  const devEvmStatusRef = useRef<HTMLDivElement | null>(null)
+  const verifiedResultRef = useRef<HTMLElement | null>(null)
   const paymentCardRef = useRef<HTMLDivElement | null>(null)
   const nimiqProvider = useNimiqProvider()
 
   const { scrollToElement } = useSmoothScroll()
 
+  const [showDevPanel, setShowDevPanel] = useState(false)
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
+  const [qrError, setQrError] = useState<string | null>(null)
   const [manualPaymentLink, setManualPaymentLink] = useState('')
   const [createdRequestQr, setCreatedRequestQr] = useState<string | null>(null)
   const [createdRequestLink, setCreatedRequestLink] = useState<string | null>(null)
@@ -92,12 +100,6 @@ function App() {
     useState<'testnet' | 'mainnet' | null>(null)
   const [incomingSafePayRequestError, setIncomingSafePayRequestError] =
     useState<string | null>(null)
-  const [paidRequestTxHash, setPaidRequestTxHash] = useState<string | null>(null)
-  const [businessOrders, setBusinessOrders] = useState<SafePayBusinessOrderRecord[]>(() =>
-    getSafePayBusinessOrders(),
-  )
-  const [blockchainPaymentChecking, setBlockchainPaymentChecking] = useState(false)
-  const [blockchainPaymentError, setBlockchainPaymentError] = useState<string | null>(null)
 
   const {
     paymentStatus: nimiqPaymentStatus,
@@ -107,6 +109,7 @@ function App() {
 
   const {
     status,
+    evmStatus,
     resetZkAndEvmStatus,
     runPaymentIntentProof,
     verifyOnLocalEvm,
@@ -137,46 +140,6 @@ function App() {
   } = useQrScanner({
     onScan: parseScannedPaymentLink,
   })
-
-  function getLocalPaidRecordForOrder(order: SafePayOrder | null) {
-    if (!order || !nimiqProvider.account) return null
-
-    return getSafePayPaidRequest({
-      requestKey: order.id,
-      payerAddress: nimiqProvider.account,
-    })
-  }
-
-  function applyLocalPaidStatus(order: SafePayOrder): SafePayOrder {
-    const paidRecord = getLocalPaidRecordForOrder(order)
-
-    if (!paidRecord) {
-      return order
-    }
-
-    return {
-      ...order,
-      status: 'paid',
-    }
-  }
-
-  useEffect(() => {
-    if (!activeSafePayOrder || !nimiqProvider.account) {
-      setPaidRequestTxHash(null)
-      return
-    }
-
-    const paidRecord = getLocalPaidRecordForOrder(activeSafePayOrder)
-
-    setPaidRequestTxHash(paidRecord?.txHash ?? null)
-
-    if (paidRecord && activeSafePayOrder.status !== 'paid') {
-      setActiveSafePayOrder({
-        ...activeSafePayOrder,
-        status: 'paid',
-      })
-    }
-  }, [activeSafePayOrder?.id, activeSafePayOrder?.status, nimiqProvider.account])
 
   useEffect(() => {
     try {
@@ -259,7 +222,7 @@ function App() {
       version: 'safepay-order-v1',
       type: 'payment-request',
       recipient: activeSafePayOrderRecipient,
-      network: activeSafePayOrderNetwork ?? SAFE_PAY_PAYMENT_NETWORK,
+      network: activeSafePayOrderNetwork ?? 'testnet',
       order: activeSafePayOrder,
     })
   }
@@ -267,13 +230,9 @@ function App() {
   function loadSafePayOrderRequestPayload(
     safePayRequest: SafePayOrderRequestPayload,
   ) {
-    const orderWithLocalStatus = applyLocalPaidStatus(safePayRequest.order)
-    const paidRecord = getLocalPaidRecordForOrder(safePayRequest.order)
-
-    setActiveSafePayOrder(orderWithLocalStatus)
+    setActiveSafePayOrder(safePayRequest.order)
     setActiveSafePayOrderRecipient(safePayRequest.recipient)
     setActiveSafePayOrderNetwork(safePayRequest.network)
-    setPaidRequestTxHash(paidRecord?.txHash ?? null)
     setIncomingSafePayRequestError(null)
   }
 
@@ -285,7 +244,6 @@ function App() {
     setCreatedRequestQr(null)
     setCreatedRequestLink(null)
     setCreatedRequestError(null)
-    setBlockchainPaymentError(null)
 
     resetPaymentReview()
     resetVerificationState()
@@ -294,10 +252,6 @@ function App() {
 
   function loadSafePayOrderForReview() {
     try {
-      if (activeSafePayOrder?.status === 'paid') {
-        throw new Error('This wallet already paid this SafePay request.')
-      }
-
       const parsed = createPaymentReviewPayloadFromOrder()
 
       resetVerificationState()
@@ -323,137 +277,12 @@ function App() {
     resetNimiqPaymentStatus()
     setManualPaymentLink('')
     setScannerError(null)
+    setQrError(null)
   }
 
-
-  function refreshBusinessOrders() {
-    setBusinessOrders(getSafePayBusinessOrders())
-  }
-
-  function getIntentHashForPaymentCheck() {
-    return status.publicInputs[0] ?? demoPoseidonPublicValues.intentHash
-  }
-
-  async function checkBusinessOrderPaymentOnBlockchain(record: SafePayBusinessOrderRecord) {
-    try {
-      setBlockchainPaymentChecking(true)
-      setBlockchainPaymentError(null)
-
-      const payload = getSafePayOrderRequestFromUrl(record.requestLink)
-
-      if (!payload) {
-        throw new Error('This saved order is missing a valid SafePay request link.')
-      }
-
-      const intentHash = getIntentHashForPaymentCheck()
-
-      const lookupNetworks: Array<'testnet' | 'mainnet'> =
-        payload.network === 'mainnet'
-          ? ['mainnet', 'testnet']
-          : ['testnet', 'mainnet']
-
-      let foundPayment: Awaited<ReturnType<typeof findSafePayPaymentOnNimiqBlockchain>> = null
-      let foundNetwork: 'testnet' | 'mainnet' | null = null
-
-      for (const network of lookupNetworks) {
-        const payment = await findSafePayPaymentOnNimiqBlockchain({
-          network,
-          recipientAddress: payload.recipient,
-          amountNim: payload.order.totalNim,
-          intentHash,
-          maxTransactions: 500,
-        })
-
-        if (payment) {
-          foundPayment = payment
-          foundNetwork = network
-          break
-        }
-      }
-
-      if (!foundPayment || !foundNetwork) {
-        setBlockchainPaymentError(
-          'No matching blockchain payment was found on testnet or mainnet yet. If the customer just paid, wait a few seconds and refresh again.',
-        )
-        return
-      }
-
-      const paidAt = new Date().toISOString()
-
-      updateSafePayBusinessOrderStatus({
-        orderId: payload.order.id,
-        status: 'paid',
-        txHash: foundPayment.txHash,
-        paidAt,
-      })
-
-      if (foundPayment.senderAddress) {
-        saveSafePayPaidRequest({
-          id: getWalletPaidRequestId({
-            requestKey: payload.order.id,
-            payerAddress: foundPayment.senderAddress,
-          }),
-          requestKey: payload.order.id,
-          payerAddress: foundPayment.senderAddress,
-          recipientAddress: foundPayment.recipientAddress ?? payload.recipient,
-          amountNim: payload.order.totalNim,
-          network: foundNetwork,
-          txHash: foundPayment.txHash,
-          paidAt,
-          orderNumber: payload.order.orderNumber,
-          intentHashShort: shortValue(intentHash),
-          txHashShort: shortValue(foundPayment.txHash),
-        })
-      }
-
-      setBusinessOrders(getSafePayBusinessOrders())
-      setPaidRequestTxHash(foundPayment.txHash)
-      setActiveSafePayOrderNetwork(foundNetwork)
-
-      setActiveSafePayOrder((currentOrder) => {
-        if (!currentOrder || currentOrder.id !== payload.order.id) {
-          return currentOrder
-        }
-
-        return {
-          ...currentOrder,
-          status: 'paid',
-        }
-      })
-    } catch (error) {
-      console.error(error)
-      setBlockchainPaymentError(error instanceof Error ? error.message : String(error))
-    } finally {
-      setBlockchainPaymentChecking(false)
-    }
-  }
-
-  async function openBusinessOrder(record: SafePayBusinessOrderRecord) {
-    try {
-      const payload = getSafePayOrderRequestFromUrl(record.requestLink)
-
-      if (!payload) {
-        throw new Error('This saved order is missing a valid SafePay request link.')
-      }
-
-      const requestQr = await createQrCodeDataUrl(record.requestLink)
-      const orderWithSavedStatus: SafePayOrder = {
-        ...payload.order,
-        status: record.status,
-      }
-
-      setActiveSafePayOrder(orderWithSavedStatus)
-      setActiveSafePayOrderRecipient(payload.recipient)
-      setActiveSafePayOrderNetwork(payload.network)
-      setCreatedRequestQr(requestQr)
-      setCreatedRequestLink(record.requestLink)
-      setCreatedRequestError(null)
-      setPaidRequestTxHash(record.txHash ?? null)
-      setIncomingSafePayRequestError(null)
-    } catch (error) {
-      console.error(error)
-      setCreatedRequestError(error instanceof Error ? error.message : String(error))
-    }
+  function loadDemoPaymentLink() {
+    setManualPaymentLink(DEMO_PAYMENT_LINK)
+    resetVerificationState()
   }
 
   async function createSafePayRequest(orderDraft?: SafePayOrderDraft) {
@@ -477,13 +306,11 @@ function App() {
     }
 
     try {
-      setPaidRequestTxHash(null)
-
       const safePayOrder = createSafePayOrder(orderDraft)
       const payload = createSafePayOrderRequestPayload({
         order: safePayOrder,
         recipient: nimiqProvider.account,
-        network: SAFE_PAY_PAYMENT_NETWORK,
+        network: 'testnet',
       })
 
       const appBaseUrl =
@@ -499,20 +326,6 @@ function App() {
       console.log('SafePay compact request link:', requestLink)
 
       const dataUrl = await createQrCodeDataUrl(requestLink)
-
-      saveSafePayBusinessOrder({
-        id: safePayOrder.id,
-        orderNumber: safePayOrder.orderNumber,
-        businessName: safePayOrder.businessName,
-        totalNim: safePayOrder.totalNim,
-        createdAt: safePayOrder.createdAt,
-        expiresAt: safePayOrder.expiresAt,
-        status: safePayOrder.status,
-        recipientAddress: payload.recipient,
-        network: payload.network,
-        requestLink,
-      })
-      refreshBusinessOrders()
 
       setActiveSafePayOrder(safePayOrder)
       setActiveSafePayOrderRecipient(payload.recipient)
@@ -609,40 +422,91 @@ function App() {
   }
 
   function parseScannedPaymentLink(link: string) {
-    try {
-      const scannedLink = link.trim()
+  try {
+    const scannedLink = link.trim()
 
-      const friendlyError = getFriendlyPaymentLinkError(scannedLink)
+    const friendlyError = getFriendlyPaymentLinkError(scannedLink)
 
-      if (friendlyError) {
-        throw friendlyError
-      }
+    if (friendlyError) {
+      throw friendlyError
+    }
 
-      const linkToParse = scannedLink
+    const linkToParse = scannedLink
 
-      const safePayOrderRequest = getSafePayOrderRequestFromUrl(linkToParse)
+    const safePayOrderRequest = getSafePayOrderRequestFromUrl(linkToParse)
 
-      if (safePayOrderRequest) {
-        setManualPaymentLink(linkToParse)
-        loadSafePayOrderForReceipt(safePayOrderRequest)
-        setScannerError(null)
-        return
-      }
-
-      const parsed = parseSafePayPaymentLink(linkToParse)
-
+    if (safePayOrderRequest) {
       setManualPaymentLink(linkToParse)
-      handleParseSuccess(parsed)
+      loadSafePayOrderForReceipt(safePayOrderRequest)
       setScannerError(null)
-      scrollToElement(paymentReviewRef)
+      return
+    }
+
+    const parsed = parseSafePayPaymentLink(linkToParse)
+
+    setManualPaymentLink(linkToParse)
+    handleParseSuccess(parsed)
+    setScannerError(null)
+    scrollToElement(paymentReviewRef)
+  } catch (error) {
+    console.error(error)
+
+    setManualPaymentLink(link.trim())
+    handleParseError(error)
+    setScannerError(error instanceof Error ? error.message : String(error))
+    scrollToElement(paymentReviewRef)
+  }
+}
+
+  async function generatePaymentLinkQr() {
+    try {
+      const dataUrl = await createQrCodeDataUrl(DEMO_SHORT_QR_LINK)
+
+      setQrDataUrl(dataUrl)
+      setQrError(null)
+      scrollToElement(qrPreviewRef)
     } catch (error) {
       console.error(error)
 
-      setManualPaymentLink(link.trim())
-      handleParseError(error)
-      setScannerError(error instanceof Error ? error.message : String(error))
-      scrollToElement(paymentReviewRef)
+      setQrDataUrl(null)
+      setQrError(error instanceof Error ? error.message : String(error))
     }
+  }
+
+  function toggleDevPanel() {
+    const nextValue = !showDevPanel
+
+    setShowDevPanel(nextValue)
+
+    if (nextValue) {
+      scrollToElement(devPanelRef, 'start')
+    }
+  }
+
+  async function runDevPaymentIntentProof() {
+    const verified = await runPaymentIntentProof()
+
+    scrollToElement(devZkStatusRef)
+
+    return verified
+  }
+
+  async function runDevLocalEvmVerification() {
+    if (!SHOULD_RUN_LOCAL_EVM) {
+      alert(
+        'Local EVM verifier is disabled on GitHub Pages. Use localhost with Anvil, or deploy the verifier to a public HTTPS EVM RPC.'
+      )
+
+      scrollToElement(devEvmStatusRef)
+
+      return false
+    }
+
+    const verified = await verifyOnLocalEvm()
+
+    scrollToElement(devEvmStatusRef)
+
+    return verified
   }
 
   async function sendVerifiedNimiqPayment() {
@@ -651,124 +515,180 @@ function App() {
     }
 
     const intentHash = status.publicInputs[0] ?? null
-    const requestKey = activeSafePayOrder?.id ?? null
-    const payerAddress = nimiqProvider.account
 
-    if (requestKey && payerAddress) {
-      const paidRecord = getSafePayPaidRequest({
-        requestKey,
-        payerAddress,
-      })
-
-      if (paidRecord) {
-        setPaidRequestTxHash(paidRecord.txHash)
-        setActiveSafePayOrder((currentOrder) =>
-          currentOrder
-            ? {
-              ...currentOrder,
-              status: 'paid',
-            }
-            : currentOrder,
-        )
-        return
-      }
-    }
-
-    const transactionHash = await sendNimiqPayment({
+    await sendNimiqPayment({
       paymentReview,
       intentHash,
       getProvider: nimiqProvider.getProvider,
     })
+  }
+  function getCurrentStep(): 'review' | 'verify' | 'pay' {
+    if (reviewStatus === 'verified') return 'pay'
+    if (paymentReview) return 'verify'
+    return 'review'
+  }
 
-    if (!transactionHash || !requestKey || !payerAddress) {
-      return
-    }
+  const useNimiqPayFlow = true
 
-    const paidAt = new Date().toISOString()
-
-    saveSafePayPaidRequest({
-      id: getWalletPaidRequestId({
-        requestKey,
-        payerAddress,
-      }),
-      requestKey,
-      payerAddress,
-      recipientAddress: paymentReview.recipient,
-      amountNim: String(paymentReview.amountNim),
-      network: paymentReview.network ?? activeSafePayOrderNetwork ?? 'Nimiq',
-      txHash: transactionHash,
-      paidAt,
-      orderNumber: activeSafePayOrder?.orderNumber,
-      intentHashShort: shortValue(intentHash),
-      txHashShort: shortValue(transactionHash),
-    })
-
-    updateSafePayBusinessOrderStatus({
-      orderId: requestKey,
-      status: 'paid',
-      txHash: transactionHash,
-      paidAt,
-    })
-    setBusinessOrders(getSafePayBusinessOrders())
-
-    setPaidRequestTxHash(transactionHash)
-    setActiveSafePayOrder((currentOrder) =>
-      currentOrder
-        ? {
-          ...currentOrder,
-          status: 'paid',
-        }
-        : currentOrder,
+  if (useNimiqPayFlow) {
+    return (
+      <NimiqPayFlowShell
+        manualPaymentLink={manualPaymentLink}
+        scannerRunning={scannerRunning}
+        scannerError={scannerError}
+        videoRef={videoRef}
+        createdRequestQr={createdRequestQr}
+        createdRequestLink={createdRequestLink}
+        createdRequestError={createdRequestError}
+        activeSafePayOrder={activeSafePayOrder}
+        activeSafePayOrderRecipient={activeSafePayOrderRecipient}
+        activeSafePayOrderNetwork={activeSafePayOrderNetwork}
+        incomingSafePayRequestError={incomingSafePayRequestError}
+        paymentReview={paymentReview}
+        reviewStatus={reviewStatus}
+        reviewError={reviewError}
+        proofPublicInputs={status.publicInputs ?? []}
+        nimiqConnected={nimiqProvider.connected}
+        nimiqConnecting={nimiqProvider.connecting}
+        nimiqAccount={nimiqProvider.account}
+        paymentStatus={nimiqPaymentStatus}
+        onManualPaymentLinkChange={(value) => {
+          setManualPaymentLink(value)
+          resetVerificationState()
+        }}
+        onParsePaymentLink={parseManualPaymentLink}
+        onStartQrScanner={startQrScanner}
+        onStopQrScanner={stopQrScanner}
+        onVerifyBeforePayment={verifyBeforePayment}
+        onSendPayment={sendVerifiedNimiqPayment}
+        onConnectNimiq={nimiqProvider.connect}
+        onDisconnectNimiq={nimiqProvider.disconnectLocalState}
+        onResetFlow={resetFlow}
+        onCreateRequest={createSafePayRequest}
+        onLoadCreatedRequestForReview={loadSafePayOrderForReview}
+      />
     )
   }
+
   return (
-    <NimiqPayFlowShell
-      manualPaymentLink={manualPaymentLink}
-      scannerRunning={scannerRunning}
-      scannerError={scannerError}
-      videoRef={videoRef}
-      createdRequestQr={createdRequestQr}
-      createdRequestLink={createdRequestLink}
-      createdRequestError={createdRequestError}
-      activeSafePayOrder={activeSafePayOrder}
-      activeSafePayOrderRecipient={activeSafePayOrderRecipient}
-      activeSafePayOrderNetwork={activeSafePayOrderNetwork}
-      activeRequestPaid={activeSafePayOrder?.status === 'paid'}
-      activeRequestPaidTxHash={paidRequestTxHash}
-      businessOrders={businessOrders}
-      blockchainPaymentChecking={blockchainPaymentChecking}
-      blockchainPaymentError={blockchainPaymentError}
-      incomingSafePayRequestError={incomingSafePayRequestError}
-      paymentReview={paymentReview}
-      reviewStatus={reviewStatus}
-      reviewError={reviewError}
-      proofPublicInputs={status.publicInputs ?? []}
-      nimiqConnected={nimiqProvider.connected}
-      nimiqConnecting={nimiqProvider.connecting}
-      nimiqAccount={nimiqProvider.account}
-      paymentStatus={nimiqPaymentStatus}
-      onManualPaymentLinkChange={(value) => {
-        setManualPaymentLink(value)
-        resetVerificationState()
-      }}
-      onParsePaymentLink={parseManualPaymentLink}
-      onStartQrScanner={startQrScanner}
-      onStopQrScanner={stopQrScanner}
-      onVerifyBeforePayment={verifyBeforePayment}
-      onSendPayment={sendVerifiedNimiqPayment}
-      onConnectNimiq={nimiqProvider.connect}
-      onDisconnectNimiq={nimiqProvider.disconnectLocalState}
-      onResetFlow={resetFlow}
-      onCreateRequest={createSafePayRequest}
-      onLoadCreatedRequestForReview={loadSafePayOrderForReview}
-      onRefreshBusinessOrders={refreshBusinessOrders}
-      onOpenBusinessOrder={openBusinessOrder}
-      onCheckBusinessOrderPayment={checkBusinessOrderPaymentOnBlockchain}
-      onClearBusinessOrders={() => {
-        clearSafePayBusinessOrders()
-        setBusinessOrders([])
-      }}
-    />
+    <div className="app-container">
+      <AppHeader
+        showDevPanel={showDevPanel}
+        onToggleDevPanel={toggleDevPanel}
+      />
+
+      <main className="app-main">
+        <ProgressSteps
+          currentStep={getCurrentStep()}
+          reviewReady={!!paymentReview}
+          verified={reviewStatus === 'verified'}
+          paid={nimiqPaymentStatus.sent}
+        />
+        <NimiqProviderCard
+          connecting={nimiqProvider.connecting}
+          connected={nimiqProvider.connected}
+          account={nimiqProvider.account}
+          consensusEstablished={nimiqProvider.consensusEstablished}
+          blockNumber={nimiqProvider.blockNumber}
+          error={nimiqProvider.error}
+          onConnect={nimiqProvider.connect}
+          onDisconnectLocalState={nimiqProvider.disconnectLocalState}
+        />
+        <div className="role-grid">
+          <section className="role-section">
+            <div className="role-section-header">
+              <span className="role-step">Receiver</span>
+              <div>
+                <h2>Create Request</h2>
+                <p>Generate a SafePay QR for someone else to verify and pay.</p>
+              </div>
+            </div>
+
+            <CreateRequestCard
+              qrDataUrl={createdRequestQr}
+              requestLink={createdRequestLink}
+              error={createdRequestError}
+              onCreateRequest={createSafePayRequest}
+              onLoadRequestForReview={loadSafePayOrderForReview}
+            />
+          </section>
+
+          <section className="role-section">
+            <div className="role-section-header">
+              <span className="role-step">Payer</span>
+              <div>
+                <h2>Verify Payment</h2>
+                <p>Scan or load a request, review it, then verify before paying.</p>
+              </div>
+            </div>
+
+            <ScanPaymentCard
+              manualPaymentLink={manualPaymentLink}
+              scannerRunning={scannerRunning}
+              scannerError={scannerError}
+              qrDataUrl={qrDataUrl}
+              qrError={qrError}
+              videoRef={videoRef}
+              qrPreviewRef={qrPreviewRef}
+              onManualPaymentLinkChange={(value) => {
+                setManualPaymentLink(value)
+                resetVerificationState()
+              }}
+              onParsePaymentLink={parseManualPaymentLink}
+              onLoadDemoPaymentLink={loadDemoPaymentLink}
+              onStartQrScanner={startQrScanner}
+              onStopQrScanner={stopQrScanner}
+              onGenerateDemoQr={generatePaymentLinkQr}
+            />
+          </section>
+        </div>
+
+        {paymentReview && (
+          <PaymentReviewCard
+            paymentReview={paymentReview}
+            reviewStatus={reviewStatus}
+            reviewError={reviewError}
+            paymentReviewRef={paymentReviewRef}
+            onVerifyBeforePayment={verifyBeforePayment}
+            onResetFlow={resetFlow}
+          />
+        )}
+
+        {paymentReview && reviewStatus === 'verified' && (
+          <section className="final-flow-card">
+            <VerifiedResultCard
+              verifiedResultRef={verifiedResultRef}
+              browserProofVerified={LOCAL_UI_DEV_MODE ? true : status.proofVerified}
+              evmVerified={LOCAL_UI_DEV_MODE ? true : evmStatus.verified}
+              proofSize={LOCAL_UI_DEV_MODE ? 0 : status.proofSize}
+              onResetFlow={resetFlow}
+            />
+
+            <NimiqPaymentCard
+              paymentReview={paymentReview}
+              nimiqConnected={nimiqProvider.connected}
+              privateIntentVerified={reviewStatus === 'verified'}
+              paymentStatus={nimiqPaymentStatus}
+              onSendPayment={sendVerifiedNimiqPayment}
+            />
+          </section>
+        )}
+
+        {showDevPanel && (
+          <DevPanel
+            devPanelRef={devPanelRef}
+            devZkStatusRef={devZkStatusRef}
+            devEvmStatusRef={devEvmStatusRef}
+            demoPaymentLink={DEMO_PAYMENT_LINK}
+            status={status}
+            evmStatus={evmStatus}
+            onRunZkProof={runDevPaymentIntentProof}
+            onRunEvmVerification={runDevLocalEvmVerification}
+          />
+        )}
+      </main>
+    </div>
   )
 }
+
 export default App

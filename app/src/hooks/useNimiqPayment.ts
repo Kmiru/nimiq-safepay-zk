@@ -3,6 +3,7 @@ import { init } from '@nimiq/mini-app-sdk'
 
 import type { PaymentReview } from '../lib/paymentReview'
 import { nimToLunaString } from '../lib/canonicalFields'
+import { intentHashToCompactData } from '../lib/safePayIntentData'
 import {
   createInitialNimiqPaymentStatus,
   type NimiqPaymentStatus,
@@ -18,22 +19,6 @@ type SendPaymentParams = {
 
 function isDummyRecipient(recipient: string): boolean {
   return recipient.replaceAll(' ', '') === 'NQ000000000000000000000000000000000000'
-}
-
-function normalizeIntentHash(intentHash: string | null | undefined): string {
-  const value = intentHash?.trim()
-
-  if (!value) {
-    throw new Error(
-      'Missing SafePay intentHash. Verify the payment request before paying.'
-    )
-  }
-
-  if (!value.startsWith('0x')) {
-    return `0x${value}`
-  }
-
-  return value
 }
 
 function getProviderErrorMessage(value: unknown, fallback: string): string {
@@ -71,7 +56,7 @@ export function useNimiqPayment() {
     paymentReview,
     intentHash,
     getProvider,
-  }: SendPaymentParams): Promise<boolean> {
+  }: SendPaymentParams): Promise<string | null> {
     try {
       setPaymentStatus({
         sending: true,
@@ -92,7 +77,7 @@ export function useNimiqPayment() {
 
       if (isDummyRecipient(paymentReview.recipient)) {
         throw new Error(
-          'This demo recipient is not a real Nimiq address. Replace it with a valid testnet recipient before sending payment.'
+          'This recipient is not a real Nimiq address. Replace it with a valid recipient before sending payment.'
         )
       }
 
@@ -102,8 +87,7 @@ export function useNimiqPayment() {
         throw new Error(`Invalid payment amount: ${paymentReview.amountNim} NIM`)
       }
 
-      const safePayIntentHash = normalizeIntentHash(intentHash)
-      const data = `safepay:v1:${safePayIntentHash}`
+      const data = intentHashToCompactData(intentHash)
 
       const transactionResult = await provider.sendBasicTransactionWithData({
         recipient: paymentReview.recipient,
@@ -127,7 +111,7 @@ export function useNimiqPayment() {
         error: null,
       })
 
-      return true
+      return transactionResult
     } catch (error) {
       console.error('Nimiq payment failed:', error)
 
@@ -138,7 +122,7 @@ export function useNimiqPayment() {
         error: error instanceof Error ? error.message : String(error),
       })
 
-      return false
+      return null
     }
   }
 
