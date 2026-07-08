@@ -1,274 +1,781 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>SafePay ZK — Verify before you pay</title>
+  <meta
+    name="description"
+    content="SafePay ZK is a Nimiq Pay Mini App prototype that lets users review and verify payment requests before paying on Nimiq testnet."
+  />
+
+  <meta property="og:title" content="SafePay ZK — Verify before you pay" />
+  <meta
+    property="og:description"
+    content="Create SafePay requests, scan QR codes, verify before payment, and detect Paid / Expired status from the Nimiq testnet blockchain."
+  />
+  <meta property="og:image" content="/icons/safepay-icon-512.png" />
+  <meta property="og:type" content="website" />
+
+  <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="./styles.css" />
   <style>
-    :root {
-      --bg: #f5f7fa;
-      --card: #ffffff;
-      --text: #1f2b4d;
-      --muted: #8898aa;
-      --accent: #3b6df0;
-      --success: #2ecc71;
-      --border: #e2e8f0;
-    }
+:root {
+  color-scheme: light;
+  --bg: #f6f8fb;
+  --card: rgba(255, 255, 255, 0.86);
+  --text: #172033;
+  --muted: #657085;
+  --line: rgba(23, 32, 51, 0.1);
+  --blue: #1f7aff;
+  --cyan: #00d4ff;
+  --green: #21c977;
+  --yellow: #f7b500;
+  --shadow: 0 24px 80px rgba(23, 32, 51, 0.13);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+* {
+  box-sizing: border-box;
+}
 
-    body {
-      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-    }
+html {
+  scroll-behavior: smooth;
+}
 
-    .page {
-      width: min(1120px, 100%);
-      margin: 0 auto;
-      padding: 32px 20px 64px;
-    }
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(0, 212, 255, 0.24), transparent 34rem),
+    radial-gradient(circle at top right, rgba(31, 122, 255, 0.18), transparent 32rem),
+    linear-gradient(180deg, #f8fbff 0%, var(--bg) 58%, #eef3fb 100%);
+}
 
-    .hero {
-      text-align: center;
-      padding: 72px 0 48px;
-    }
+a {
+  color: inherit;
+  text-decoration: none;
+}
 
-    .badge {
-      display: inline-flex;
-      padding: 8px 14px;
-      border-radius: 999px;
-      background: rgba(59, 109, 240, 0.08);
-      color: var(--accent);
-      font-size: 13px;
-      font-weight: 800;
-      margin-bottom: 20px;
-    }
+.page {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+}
 
-    h1 {
-      font-size: clamp(42px, 8vw, 76px);
-      line-height: 1;
-      letter-spacing: -0.06em;
-      margin-bottom: 20px;
-    }
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.72fr);
+  align-items: center;
+  gap: 48px;
+  min-height: 92vh;
+  padding: 76px 0 52px;
+}
 
-    .subtitle {
-      max-width: 720px;
-      margin: 0 auto 32px;
-      color: var(--muted);
-      font-size: clamp(18px, 3vw, 24px);
-    }
+.badge,
+.section-heading span,
+.cta-section span {
+  display: inline-flex;
+  width: fit-content;
+  padding: 8px 13px;
+  border-radius: 999px;
+  background: rgba(31, 122, 255, 0.1);
+  border: 1px solid rgba(31, 122, 255, 0.18);
+  color: #135cc8;
+  font-size: 13px;
+  font-weight: 800;
+}
 
-    .actions {
-      display: flex;
-      justify-content: center;
-      gap: 14px;
-      flex-wrap: wrap;
-    }
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
 
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 48px;
-      padding: 0 22px;
-      border-radius: 14px;
-      text-decoration: none;
-      font-weight: 800;
-      border: 1px solid var(--border);
-    }
+h1 {
+  margin: 22px 0 10px;
+  font-size: clamp(52px, 9vw, 104px);
+  letter-spacing: -0.08em;
+  line-height: 0.9;
+}
 
-    .btn-primary {
-      background: var(--accent);
-      color: #fff;
-      border-color: var(--accent);
-    }
+.subtitle {
+  margin-bottom: 22px;
+  font-size: clamp(27px, 4vw, 54px);
+  font-weight: 900;
+  letter-spacing: -0.055em;
+  color: #111827;
+}
 
-    .btn-secondary {
-      background: #fff;
-      color: var(--text);
-    }
+.hero-text {
+  max-width: 720px;
+  color: var(--muted);
+  font-size: 19px;
+  line-height: 1.7;
+}
 
-    .mockup {
-      margin: 32px auto 56px;
-      border-radius: 28px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-      background: #fff;
-      box-shadow: 0 18px 60px rgba(31, 43, 77, 0.12);
-    }
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 30px;
+}
 
-    .mockup img {
-      display: block;
-      width: 100%;
-      height: auto;
-    }
+.primary-btn,
+.secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50px;
+  padding: 0 22px;
+  border-radius: 17px;
+  font-size: 15px;
+  font-weight: 900;
+  box-shadow: 0 16px 36px rgba(31, 122, 255, 0.22);
+}
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 18px;
-      margin: 40px 0;
-    }
+.primary-btn {
+  color: #fff;
+  background: linear-gradient(135deg, var(--blue), #0051c8);
+}
 
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 22px;
-      padding: 24px;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
-    }
+.secondary-btn {
+  color: #172033;
+  background: #fff;
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
 
-    .card h2 {
-      font-size: 22px;
-      margin-bottom: 10px;
-    }
+.try-box {
+  display: grid;
+  gap: 6px;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 28px;
+  padding: 15px 17px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+}
 
-    .card p {
-      color: var(--muted);
-      font-size: 15px;
-    }
+.try-box span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
 
-    .flow {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 14px;
-      margin-top: 20px;
-    }
+.try-box strong {
+  overflow-wrap: anywhere;
+  font-size: 16px;
+}
 
-    .flow-step {
-      background: #fff;
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 20px;
-      text-align: center;
-      font-weight: 800;
-    }
+.hero-card {
+  display: grid;
+  gap: 20px;
+  padding: 28px;
+  border-radius: 36px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
 
-    .flow-step span {
-      display: block;
-      font-size: 30px;
-      margin-bottom: 8px;
-    }
+.hero-card img {
+  width: 132px;
+  height: 132px;
+  border-radius: 34px;
+  box-shadow: 0 20px 46px rgba(23, 32, 51, 0.18);
+}
 
-    .section {
-      margin-top: 56px;
-      text-align: center;
-    }
+.hero-card span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
 
-    .section h2 {
-      font-size: clamp(28px, 5vw, 44px);
-      letter-spacing: -0.04em;
-      margin-bottom: 14px;
-    }
+.hero-card strong {
+  display: block;
+  margin-top: 7px;
+  font-size: 28px;
+  font-weight: 950;
+  letter-spacing: -0.04em;
+}
 
-    .section p {
-      max-width: 720px;
-      margin: 0 auto;
-      color: var(--muted);
-      font-size: 18px;
-    }
+.hero-card p {
+  margin: 10px 0 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
 
-    footer {
-      margin-top: 60px;
-      padding-top: 28px;
-      border-top: 1px solid var(--border);
-      color: var(--muted);
-      text-align: center;
-      font-size: 14px;
-    }
+.section {
+  padding: 72px 0;
+}
 
-    @media (max-width: 800px) {
-      .grid,
-      .flow {
-        grid-template-columns: 1fr;
-      }
+.section-heading {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 28px;
+}
 
-      .hero {
-        padding-top: 48px;
-      }
-    }
+.section-heading h2 {
+  max-width: 820px;
+  margin: 0;
+  font-size: clamp(32px, 5vw, 58px);
+  line-height: 0.98;
+  letter-spacing: -0.06em;
+}
+
+.section-heading p {
+  max-width: 700px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+code {
+  padding: 3px 6px;
+  border-radius: 8px;
+  background: rgba(23, 32, 51, 0.06);
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.feature-card,
+.architecture-card,
+.roadmap-item,
+.screenshot-card,
+.cta-section {
+  border: 1px solid var(--line);
+  background: var(--card);
+  box-shadow: 0 18px 60px rgba(23, 32, 51, 0.08);
+  backdrop-filter: blur(16px);
+}
+
+.feature-card {
+  min-height: 218px;
+  padding: 24px;
+  border-radius: 28px;
+}
+
+.feature-card span,
+.roadmap-item span {
+  display: inline-flex;
+  margin-bottom: 26px;
+  color: var(--blue);
+  font-size: 13px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.feature-card h3,
+.roadmap-item h3 {
+  margin-bottom: 10px;
+  font-size: 22px;
+  letter-spacing: -0.04em;
+}
+
+.feature-card p,
+.roadmap-item p,
+.architecture-card p,
+.architecture-card li,
+.cta-section p {
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.flow {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 12px;
+}
+
+.flow-step {
+  padding: 22px;
+  border-radius: 24px;
+  background: #fff;
+  border: 1px solid var(--line);
+}
+
+.flow-step strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 18px;
+}
+
+.flow-step p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.arrow {
+  display: none;
+}
+
+.screenshots-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+}
+
+.screenshot-card {
+  margin: 0;
+  padding: 16px;
+  border-radius: 34px;
+}
+
+.phone-frame {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 9 / 16;
+  overflow: hidden;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at top, rgba(31, 122, 255, 0.18), transparent 40%),
+    linear-gradient(180deg, #0f172a, #1e293b);
+  border: 8px solid #111827;
+}
+
+.phone-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.missing-shot {
+  display: none;
+  padding: 22px;
+  color: #fff;
+  text-align: center;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.phone-frame.missing .missing-shot {
+  display: block;
+}
+
+.screenshot-card figcaption {
+  margin-top: 13px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.architecture-card {
+  display: grid;
+  gap: 20px;
+  padding: 28px;
+  border-radius: 30px;
+}
+
+.architecture-card ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 24px;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.roadmap {
+  display: grid;
+  gap: 16px;
+}
+
+.roadmap-item {
+  position: relative;
+  padding: 24px;
+  border-radius: 28px;
+}
+
+.roadmap-item.active {
+  border-color: rgba(33, 201, 119, 0.34);
+  background:
+    linear-gradient(135deg, rgba(33, 201, 119, 0.12), rgba(255, 255, 255, 0.88));
+}
+
+.roadmap-item.active span {
+  color: #15803d;
+}
+
+.cta-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  margin: 40px 0 80px;
+  padding: 34px;
+  border-radius: 34px;
+}
+
+.cta-section h2 {
+  margin: 14px 0 8px;
+  font-size: clamp(32px, 5vw, 56px);
+  letter-spacing: -0.06em;
+}
+
+.cta-section p {
+  margin-bottom: 10px;
+}
+
+.cta-section strong {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 920px) {
+  .hero {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    padding-top: 48px;
+  }
+
+  .feature-grid,
+  .screenshots-grid,
+  .flow {
+    grid-template-columns: 1fr;
+  }
+
+  .architecture-card ul {
+    grid-template-columns: 1fr;
+  }
+
+  .cta-section {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 520px) {
+  .page {
+    width: min(100% - 22px, 1180px);
+  }
+
+  .hero {
+    padding-top: 30px;
+  }
+
+  .section {
+    padding: 52px 0;
+  }
+
+  .hero-card,
+  .feature-card,
+  .architecture-card,
+  .roadmap-item,
+  .cta-section {
+    border-radius: 24px;
+  }
+
+  .primary-btn,
+  .secondary-btn {
+    width: 100%;
+  }
+}
   </style>
 </head>
 <body>
   <main class="page">
     <section class="hero">
-      <div class="badge">Nimiq Mini App Concept</div>
-      <h1>Verify before you pay.</h1>
-      <p class="subtitle">
-        SafePay ZK is a safer payment review layer for Nimiq Pay.
-        Scan, review, privately verify, and only then send.
-      </p>
+      <div class="hero-content">
+        <div class="badge">Nimiq Pay Mini App · Testnet Prototype</div>
 
-      <div class="actions">
-        <a class="btn btn-primary" href="https://github.com/Kmiru/nimiq-safepay-zk" target="_blank" rel="noreferrer">
-          View GitHub
-        </a>
-        <a class="btn btn-secondary" href="#how-it-works">
-          How it works
-        </a>
-      </div>
-    </section>
+        <h1>SafePay ZK</h1>
 
-    <section class="mockup">
-      <img src="./safepay_zk_component_based_mockup.png" alt="SafePay ZK mockup showing Review, Verify, and Pay flow" />
-    </section>
-
-    <section id="how-it-works" class="section">
-      <h2>Review → Verify → Pay</h2>
-      <p>
-        SafePay ZK does not replace Nimiq Pay. It adds a verification layer before payment,
-        helping users check a payment request before sending funds.
-      </p>
-
-      <div class="flow">
-        <div class="flow-step"><span>📲</span>Scan</div>
-        <div class="flow-step"><span>🔍</span>Review</div>
-        <div class="flow-step"><span>🔐</span>Verify</div>
-        <div class="flow-step"><span>💸</span>Pay</div>
-      </div>
-    </section>
-
-    <section class="grid">
-      <div class="card">
-        <h2>Safer payment review</h2>
-        <p>
-          Users review the amount, recipient, network, and expiration before continuing.
+        <p class="subtitle">
+          Verify before you pay.
         </p>
+
+        <p class="hero-text">
+          SafePay ZK is a Mini App concept for Nimiq Pay that adds a verification layer before payment.
+          A business creates a payment request, the user scans it, reviews it, verifies it, and pays through Nimiq Pay.
+        </p>
+
+        <div class="hero-actions">
+          <a class="primary-btn" href="/">Launch Mini App</a>
+          <a class="secondary-btn" href="#roadmap">View Roadmap</a>
+        </div>
+
+        <div class="try-box">
+          <span>Try it inside Nimiq Pay</span>
+          <strong>https://safepayzk.com</strong>
+        </div>
       </div>
 
-      <div class="card">
-        <h2>Private verification</h2>
-        <p>
-          The verification step checks whether the request matches an approved intent
-          without exposing private intent data.
-        </p>
-      </div>
-
-      <div class="card">
-        <h2>Nimiq Pay handles payment</h2>
-        <p>
-          Nimiq Pay remains responsible for wallet connection, confirmation, and transaction history.
-        </p>
+      <div class="hero-card">
+        <img src="/icons/safepay-icon-512.png" alt="SafePay ZK icon" />
+        <div>
+          <span>Current status</span>
+          <strong>Working testnet flow</strong>
+          <p>Business creates QR. Personal scans, verifies, and pays. Business detects Paid / Expired on-chain.</p>
+        </div>
       </div>
     </section>
 
     <section class="section">
-      <h2>Private verification before payment.</h2>
-      <p>
-        The payment itself can still happen through Nimiq Pay. SafePay ZK focuses on the moment before payment:
-        helping users verify what they are about to send.
-      </p>
+      <div class="section-heading">
+        <span>What it does</span>
+        <h2>A safer payment flow before sending NIM</h2>
+      </div>
+
+      <div class="feature-grid">
+        <article class="feature-card">
+          <span>01</span>
+          <h3>Create payment requests</h3>
+          <p>
+            Business connects with Nimiq Pay, creates an order, and generates a SafePay QR code.
+          </p>
+        </article>
+
+        <article class="feature-card">
+          <span>02</span>
+          <h3>Scan and review</h3>
+          <p>
+            Personal scans the QR code and reviews recipient, amount, network, expiration, and order details.
+          </p>
+        </article>
+
+        <article class="feature-card">
+          <span>03</span>
+          <h3>Verify before payment</h3>
+          <p>
+            SafePay verifies the payment request before enabling the PAY action.
+          </p>
+        </article>
+
+        <article class="feature-card">
+          <span>04</span>
+          <h3>Pay with Nimiq Pay</h3>
+          <p>
+            Nimiq Pay still handles the wallet, user confirmation, and transaction.
+          </p>
+        </article>
+
+        <article class="feature-card">
+          <span>05</span>
+          <h3>Attach SafePay data</h3>
+          <p>
+            The payment includes SafePay intent data, allowing Business to detect the matching payment on-chain.
+          </p>
+        </article>
+
+        <article class="feature-card">
+          <span>06</span>
+          <h3>Detect Paid / Expired</h3>
+          <p>
+            While Business is open, SafePay checks the Nimiq testnet and updates orders as Paid or Expired.
+          </p>
+        </article>
+      </div>
     </section>
 
-    <footer>
-      Built by @quetzaltv / Camilo Tenorio for the Nimiq Mini Apps Competition.
-    </footer>
+    <section class="section flow-section">
+      <div class="section-heading">
+        <span>Current flow</span>
+        <h2>How SafePay ZK works today</h2>
+      </div>
+
+      <div class="flow">
+        <div class="flow-step">
+          <strong>Business</strong>
+          <p>Create order and generate QR</p>
+        </div>
+
+        <div class="arrow">→</div>
+
+        <div class="flow-step">
+          <strong>Personal</strong>
+          <p>Scan QR and review request</p>
+        </div>
+
+        <div class="arrow">→</div>
+
+        <div class="flow-step">
+          <strong>SafePay</strong>
+          <p>Verify before enabling PAY</p>
+        </div>
+
+        <div class="arrow">→</div>
+
+        <div class="flow-step">
+          <strong>Nimiq Pay</strong>
+          <p>Send testnet transaction</p>
+        </div>
+
+        <div class="arrow">→</div>
+
+        <div class="flow-step">
+          <strong>Business</strong>
+          <p>Detect Paid / Expired on-chain</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section screenshots-section">
+      <div class="section-heading">
+        <span>App flow</span>
+        <h2>Screenshots from the Mini App</h2>
+        <p>
+          Add screenshots in <code>public/landing/screenshots/</code> using the file names shown below.
+        </p>
+      </div>
+
+      <div class="screenshots-grid">
+        <figure class="screenshot-card">
+          <div class="phone-frame">
+            <img src="./screenshots/01-business-home.png" alt="Business home" />
+            <div class="missing-shot">01-business-home.png</div>
+          </div>
+          <figcaption>Business mode</figcaption>
+        </figure>
+
+        <figure class="screenshot-card">
+          <div class="phone-frame">
+            <img src="./screenshots/02-create-request.png" alt="Create request" />
+            <div class="missing-shot">02-create-request.png</div>
+          </div>
+          <figcaption>Create payment request</figcaption>
+        </figure>
+
+        <figure class="screenshot-card">
+          <div class="phone-frame">
+            <img src="./screenshots/03-qr-generated.png" alt="Generated QR" />
+            <div class="missing-shot">03-qr-generated.png</div>
+          </div>
+          <figcaption>Generated SafePay QR</figcaption>
+        </figure>
+
+        <figure class="screenshot-card">
+          <div class="phone-frame">
+            <img src="./screenshots/04-personal-scan.png" alt="Personal scan" />
+            <div class="missing-shot">04-personal-scan.png</div>
+          </div>
+          <figcaption>Personal scans QR</figcaption>
+        </figure>
+
+        <figure class="screenshot-card">
+          <div class="phone-frame">
+            <img src="./screenshots/05-review-verify.png" alt="Review and verify" />
+            <div class="missing-shot">05-review-verify.png</div>
+          </div>
+          <figcaption>Review and verify</figcaption>
+        </figure>
+
+        <figure class="screenshot-card">
+          <div class="phone-frame">
+            <img src="./screenshots/06-payment-received.png" alt="Payment received" />
+            <div class="missing-shot">06-payment-received.png</div>
+          </div>
+          <figcaption>Payment received</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section architecture-section">
+      <div class="section-heading">
+        <span>Architecture</span>
+        <h2>Testnet + blockchain-only + auto-check</h2>
+      </div>
+
+      <div class="architecture-card">
+        <p>
+          The current prototype does not use a backend. SafePay ZK creates local payment requests and uses the Nimiq
+          testnet blockchain as the payment source of truth. When Business is open, the app checks the blockchain and
+          updates order status based on matching transactions.
+        </p>
+
+        <ul>
+          <li>No backend yet</li>
+          <li>No custody of funds</li>
+          <li>Nimiq Pay handles wallet confirmation and payment</li>
+          <li>SafePay adds verification before payment</li>
+          <li>Business detects Paid / Expired while the app is open</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section roadmap-section" id="roadmap">
+      <div class="section-heading">
+        <span>Roadmap</span>
+        <h2>Next phases</h2>
+      </div>
+
+      <div class="roadmap">
+        <article class="roadmap-item active">
+          <span>Phase 1</span>
+          <h3>Competition prototype polish</h3>
+          <p>
+            Keep the testnet prototype stable, polish Business and Personal flows, improve receipts,
+            and add anti-self-payment checks.
+          </p>
+        </article>
+
+        <article class="roadmap-item">
+          <span>Phase 2</span>
+          <h3>Real ZK verification</h3>
+          <p>
+            Connect the ZK proof to each real payment request, remove the fixed demo proof,
+            generate a unique intentHash per order, and verify before PAY.
+          </p>
+        </article>
+
+        <article class="roadmap-item">
+          <span>Phase 3</span>
+          <h3>Mainnet preparation</h3>
+          <p>
+            Add strict network validation, separate testnet/mainnet storage, block self-payments,
+            and test with very small real payments.
+          </p>
+        </article>
+
+        <article class="roadmap-item">
+          <span>Phase 4</span>
+          <h3>Backend or indexer</h3>
+          <p>
+            Add backend or indexer support so Business can update order status even when the device is closed.
+          </p>
+        </article>
+
+        <article class="roadmap-item">
+          <span>Phase 5</span>
+          <h3>Production hardening</h3>
+          <p>
+            Review the ZK circuit, audit the flow, improve logs and error handling, add privacy documentation,
+            and prepare for real-world use.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section cta-section">
+      <div>
+        <span>SafePay ZK</span>
+        <h2>Verify before you pay.</h2>
+        <p>
+          Try the testnet prototype inside Nimiq Pay by opening the Mini App URL:
+        </p>
+        <strong>https://safepayzk.com</strong>
+      </div>
+
+      <a class="primary-btn" href="/">Launch Mini App</a>
+    </section>
   </main>
+
+  <script>
+    document.querySelectorAll('.phone-frame img').forEach((img) => {
+      img.addEventListener('error', () => {
+        img.style.display = 'none'
+        img.parentElement.classList.add('missing')
+      })
+    })
+  </script>
 </body>
 </html>
