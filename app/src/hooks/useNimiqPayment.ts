@@ -31,13 +31,21 @@ function getProviderErrorMessage(value: unknown, fallback: string): string {
     return value.message
   }
 
-  if (
-    typeof value === 'object' &&
-    value !== null &&
-    'error' in value &&
-    typeof value.error === 'string'
-  ) {
-    return value.error
+  if (typeof value === 'object' && value !== null && 'error' in value) {
+    const errorValue = value.error
+
+    if (typeof errorValue === 'string') {
+      return errorValue
+    }
+
+    if (
+      typeof errorValue === 'object' &&
+      errorValue !== null &&
+      'message' in errorValue &&
+      typeof errorValue.message === 'string'
+    ) {
+      return errorValue.message
+    }
   }
 
   return fallback

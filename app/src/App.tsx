@@ -73,6 +73,35 @@ function getFriendlyPaymentLinkError(link: string) {
   )
 }
 
+
+async function waitForDemoVerification(timeoutMs = 650): Promise<void> {
+  await new Promise<void>((resolve) => {
+    window.setTimeout(resolve, timeoutMs)
+  })
+}
+
+async function withTimeout<T>(
+  task: Promise<T>,
+  timeoutMs: number,
+  message: string,
+): Promise<T> {
+  let timeoutId: number | undefined
+
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = window.setTimeout(() => {
+      reject(new Error(message))
+    }, timeoutMs)
+  })
+
+  try {
+    return await Promise.race([task, timeout])
+  } finally {
+    if (timeoutId !== undefined) {
+      window.clearTimeout(timeoutId)
+    }
+  }
+}
+
 function App() {
   const paymentReviewRef = useRef<HTMLElement | null>(null)
   const paymentCardRef = useRef<HTMLDivElement | null>(null)
@@ -98,6 +127,7 @@ function App() {
   )
   const [blockchainPaymentChecking, setBlockchainPaymentChecking] = useState(false)
   const [blockchainPaymentError, setBlockchainPaymentError] = useState<string | null>(null)
+  const businessAutoSyncRunningRef = useRef(false)
 
   const {
     paymentStatus: nimiqPaymentStatus,
@@ -325,59 +355,142 @@ function App() {
     setScannerError(null)
   }
 
+  function clearCurrentBusinessRequest() {
+    setCreatedRequestQr(null)
+    setCreatedRequestLink(null)
+    setCreatedRequestError(null)
+
+    setActiveSafePayOrder(null)
+    setActiveSafePayOrderRecipient(null)
+    setActiveSafePayOrderNetwork(null)
+    setPaidRequestTxHash(null)
+
+    setBlockchainPaymentError(null)
+    setIncomingSafePayRequestError(null)
+  }
+
+
+  function clearActiveSafePayRequest() {
+    setActiveSafePayOrder(null)
+    setActiveSafePayOrderRecipient(null)
+    setActiveSafePayOrderNetwork(null)
+    setPaidRequestTxHash(null)
+    setIncomingSafePayRequestError(null)
+  }
+
+
+  function getOrderTimestampMs(value: string): number | null {
+    const timestamp = new Date(value).getTime()
+
+    return Number.isFinite(timestamp) ? timestamp : null
+  }
+
+  function getBusinessOrderLiveStatus(record: SafePayBusinessOrderRecord) {
+    if (record.status !== 'active') {
+      return record.status
+    }
+
+    const expiresAtMs = getOrderTimestampMs(record.expiresAt)
+
+    if (expiresAtMs !== null && Date.now() > expiresAtMs) {
+      return 'expired' as const
+    }
+
+    return record.status
+  }
+
+  function getBusinessOrdersWithLiveStatuses() {
+    const orders = getSafePayBusinessOrders()
+    let changed = false
+
+    const liveOrders = orders.map((order) => {
+      const liveStatus = getBusinessOrderLiveStatus(order)
+
+      if (liveStatus === order.status) {
+        return order
+      }
+
+      changed = true
+
+      updateSafePayBusinessOrderStatus({
+        orderId: order.id,
+        status: liveStatus,
+      })
+
+      return {
+        ...order,
+        status: liveStatus,
+      }
+    })
+
+    return changed ? getSafePayBusinessOrders() : liveOrders
+  }
 
   function refreshBusinessOrders() {
-    setBusinessOrders(getSafePayBusinessOrders())
+    setBusinessOrders(getBusinessOrdersWithLiveStatuses())
   }
 
   function getIntentHashForPaymentCheck() {
     return status.publicInputs[0] ?? demoPoseidonPublicValues.intentHash
   }
 
-  async function checkBusinessOrderPaymentOnBlockchain(record: SafePayBusinessOrderRecord) {
-    try {
-      setBlockchainPaymentChecking(true)
-      setBlockchainPaymentError(null)
+  function updateActiveOrderStatus(params: {
+    orderId: string
+    status: SafePayOrder['status']
+    txHash?: string
+  }) {
+    if (params.txHash) {
+      setPaidRequestTxHash(params.txHash)
+    }
 
-      const payload = getSafePayOrderRequestFromUrl(record.requestLink)
-
-      if (!payload) {
-        throw new Error('This saved order is missing a valid SafePay request link.')
+    setActiveSafePayOrder((currentOrder) => {
+      if (!currentOrder || currentOrder.id !== params.orderId) {
+        return currentOrder
       }
 
-      const intentHash = getIntentHashForPaymentCheck()
-
-      const lookupNetworks: Array<'testnet' | 'mainnet'> =
-        payload.network === 'mainnet'
-          ? ['mainnet', 'testnet']
-          : ['testnet', 'mainnet']
-
-      let foundPayment: Awaited<ReturnType<typeof findSafePayPaymentOnNimiqBlockchain>> = null
-      let foundNetwork: 'testnet' | 'mainnet' | null = null
-
-      for (const network of lookupNetworks) {
-        const payment = await findSafePayPaymentOnNimiqBlockchain({
-          network,
-          recipientAddress: payload.recipient,
-          amountNim: payload.order.totalNim,
-          intentHash,
-          maxTransactions: 500,
-        })
-
-        if (payment) {
-          foundPayment = payment
-          foundNetwork = network
-          break
-        }
+      return {
+        ...currentOrder,
+        status: params.status,
       }
+    })
+  }
 
-      if (!foundPayment || !foundNetwork) {
-        setBlockchainPaymentError(
-          'No matching blockchain payment was found on testnet or mainnet yet. If the customer just paid, wait a few seconds and refresh again.',
-        )
-        return
-      }
+  async function syncBusinessOrderStatusFromBlockchain(
+    record: SafePayBusinessOrderRecord,
+  ) {
+    if (record.status === 'paid' || record.status === 'cancelled') {
+      return
+    }
 
+    const payload = getSafePayOrderRequestFromUrl(record.requestLink)
+
+    if (!payload) {
+      throw new Error('This saved order is missing a valid SafePay request link.')
+    }
+
+    const intentHash = getIntentHashForPaymentCheck()
+    const requestCreatedAtMs = getOrderTimestampMs(record.createdAt)
+    const requestExpiresAtMs = getOrderTimestampMs(record.expiresAt)
+
+    if (requestCreatedAtMs === null) {
+      throw new Error('This saved order is missing a valid creation date.')
+    }
+
+    if (requestExpiresAtMs === null) {
+      throw new Error('This saved order is missing a valid expiration date.')
+    }
+
+    const foundPayment = await findSafePayPaymentOnNimiqBlockchain({
+      network: payload.network,
+      recipientAddress: payload.recipient,
+      amountNim: payload.order.totalNim,
+      intentHash,
+      maxTransactions: 500,
+      minTimestampMs: requestCreatedAtMs,
+      maxTimestampMs: requestExpiresAtMs,
+    })
+
+    if (foundPayment) {
       const paidAt = new Date().toISOString()
 
       updateSafePayBusinessOrderStatus({
@@ -397,7 +510,7 @@ function App() {
           payerAddress: foundPayment.senderAddress,
           recipientAddress: foundPayment.recipientAddress ?? payload.recipient,
           amountNim: payload.order.totalNim,
-          network: foundNetwork,
+          network: payload.network,
           txHash: foundPayment.txHash,
           paidAt,
           orderNumber: payload.order.orderNumber,
@@ -406,20 +519,74 @@ function App() {
         })
       }
 
-      setBusinessOrders(getSafePayBusinessOrders())
       setPaidRequestTxHash(foundPayment.txHash)
-      setActiveSafePayOrderNetwork(foundNetwork)
-
-      setActiveSafePayOrder((currentOrder) => {
-        if (!currentOrder || currentOrder.id !== payload.order.id) {
-          return currentOrder
-        }
-
-        return {
-          ...currentOrder,
-          status: 'paid',
-        }
+      setActiveSafePayOrderNetwork(payload.network)
+      updateActiveOrderStatus({
+        orderId: payload.order.id,
+        status: 'paid',
+        txHash: foundPayment.txHash,
       })
+      return
+    }
+
+    if (Date.now() > requestExpiresAtMs && record.status === 'active') {
+      updateSafePayBusinessOrderStatus({
+        orderId: payload.order.id,
+        status: 'expired',
+      })
+
+      updateActiveOrderStatus({
+        orderId: payload.order.id,
+        status: 'expired',
+      })
+    }
+  }
+
+  async function syncBusinessOrdersAutomatically(showErrors = false) {
+    if (businessAutoSyncRunningRef.current) {
+      return
+    }
+
+    const orders = getBusinessOrdersWithLiveStatuses()
+    const ordersToCheck = orders.filter((order) => order.status === 'active')
+
+    setBusinessOrders(orders)
+
+    if (ordersToCheck.length === 0) {
+      return
+    }
+
+    try {
+      businessAutoSyncRunningRef.current = true
+      setBlockchainPaymentChecking(true)
+
+      if (!showErrors) {
+        setBlockchainPaymentError(null)
+      }
+
+      for (const order of ordersToCheck) {
+        await syncBusinessOrderStatusFromBlockchain(order)
+      }
+
+      setBusinessOrders(getBusinessOrdersWithLiveStatuses())
+    } catch (error) {
+      console.error(error)
+
+      if (showErrors) {
+        setBlockchainPaymentError(error instanceof Error ? error.message : String(error))
+      }
+    } finally {
+      businessAutoSyncRunningRef.current = false
+      setBlockchainPaymentChecking(false)
+    }
+  }
+
+  async function checkBusinessOrderPaymentOnBlockchain(record: SafePayBusinessOrderRecord) {
+    try {
+      setBlockchainPaymentChecking(true)
+      setBlockchainPaymentError(null)
+      await syncBusinessOrderStatusFromBlockchain(record)
+      setBusinessOrders(getBusinessOrdersWithLiveStatuses())
     } catch (error) {
       console.error(error)
       setBlockchainPaymentError(error instanceof Error ? error.message : String(error))
@@ -544,26 +711,41 @@ function App() {
       markReviewVerifying()
       scrollToElement(paymentReviewRef)
 
-      const zkVerified = await runPaymentIntentProof()
-
-      if (!zkVerified) {
-        throw new Error(
-          'The browser ZK proof could not be verified. Do not continue with this payment.'
+      if (LOCAL_UI_DEV_MODE) {
+        await waitForDemoVerification()
+        console.warn(
+          'SafePay demo verification used. Browser ZK proof generation is skipped in LOCAL_UI_DEV_MODE.',
         )
-      }
+      } else {
+        const zkVerified = await withTimeout(
+          runPaymentIntentProof(),
+          90_000,
+          'SafePay verification took too long. Please try again.',
+        )
 
-      if (SHOULD_RUN_LOCAL_EVM) {
-        const evmVerified = await verifyOnLocalEvm()
-
-        if (!evmVerified) {
+        if (!zkVerified) {
           throw new Error(
-            'The local EVM verifier rejected this payment request. Do not continue with this payment.'
+            'The browser ZK proof could not be verified. Do not continue with this payment.'
           )
         }
-      } else {
-        console.warn(
-          'Local EVM verifier skipped on GitHub Pages. Browser ZK proof verified.'
-        )
+
+        if (SHOULD_RUN_LOCAL_EVM) {
+          const evmVerified = await withTimeout(
+            verifyOnLocalEvm(),
+            20_000,
+            'Local EVM verification took too long. Make sure Anvil and the verifier contract are running.',
+          )
+
+          if (!evmVerified) {
+            throw new Error(
+              'The local EVM verifier rejected this payment request. Do not continue with this payment.'
+            )
+          }
+        } else {
+          console.warn(
+            'Local EVM verifier skipped. Browser ZK proof verified.'
+          )
+        }
       }
 
       markReviewVerified()
@@ -650,7 +832,7 @@ function App() {
       return
     }
 
-    const intentHash = status.publicInputs[0] ?? null
+    const intentHash = status.publicInputs[0] ?? demoPoseidonPublicValues.intentHash
     const requestKey = activeSafePayOrder?.id ?? null
     const payerAddress = nimiqProvider.account
 
@@ -721,6 +903,25 @@ function App() {
         : currentOrder,
     )
   }
+
+  useEffect(() => {
+    refreshBusinessOrders()
+    void syncBusinessOrdersAutomatically(false)
+
+    const timer = window.setInterval(() => {
+      void syncBusinessOrdersAutomatically(false)
+    }, 8000)
+
+    return () => {
+      window.clearInterval(timer)
+    }
+  }, [])
+
+  const proofPublicInputs =
+    status.publicInputs.length > 0
+      ? status.publicInputs
+      : [demoPoseidonPublicValues.intentHash, demoPoseidonPublicValues.nullifier]
+
   return (
     <NimiqPayFlowShell
       manualPaymentLink={manualPaymentLink}
@@ -742,7 +943,7 @@ function App() {
       paymentReview={paymentReview}
       reviewStatus={reviewStatus}
       reviewError={reviewError}
-      proofPublicInputs={status.publicInputs ?? []}
+      proofPublicInputs={proofPublicInputs}
       nimiqConnected={nimiqProvider.connected}
       nimiqConnecting={nimiqProvider.connecting}
       nimiqAccount={nimiqProvider.account}
@@ -759,6 +960,8 @@ function App() {
       onConnectNimiq={nimiqProvider.connect}
       onDisconnectNimiq={nimiqProvider.disconnectLocalState}
       onResetFlow={resetFlow}
+      onClearCurrentBusinessRequest={clearCurrentBusinessRequest}
+      onClearActiveSafePayRequest={clearActiveSafePayRequest}
       onCreateRequest={createSafePayRequest}
       onLoadCreatedRequestForReview={loadSafePayOrderForReview}
       onRefreshBusinessOrders={refreshBusinessOrders}

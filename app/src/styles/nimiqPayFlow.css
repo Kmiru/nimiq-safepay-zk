@@ -17,6 +17,10 @@
   color: var(--nq-text);
 }
 
+.nimiq-pay-flow {
+  font-family: var(--nq-font-sans);
+}
+
 .nq-pay-slider {
   width: 100%;
   min-height: 100vh;
@@ -105,7 +109,7 @@
 .nq-qr-frame {
   width: min(72vw, 310px);
   height: min(72vw, 310px);
-  border-radius: 34px;
+  border-radius: 24px;
   background: #fff;
   box-shadow: var(--nq-shadow);
   display: grid;
@@ -1537,7 +1541,7 @@
   border: 0;
   padding: 1rem;
   background-image: linear-gradient(to bottom left, #e0e4e5, #f2f6f9);
-  border-radius: 1rem;
+  border-radius: 4rem;
   gap: 0.5rem;
   display: grid;
   grid-template:
@@ -1593,16 +1597,6 @@
   font-weight: 600;
   letter-spacing: 0.02em;
   word-break: break-word;
-}
-
-.nq-mode-icon {
-  grid-area: icon;
-  display: grid;
-  place-items: center;
-  min-width: 2.5rem;
-  color: transparent;
-  font-size: 2rem;
-  line-height: 1;
 }
 
 .nq-mode-icon span {
@@ -1746,7 +1740,7 @@
 .nq-mode-page-hero {
   width: 100%;
   height: auto;
-  border-radius: 24px;
+  border-radius: 4px;
   display: grid;
   place-items: center;
   margin: 28px 0 18px;
@@ -1815,7 +1809,7 @@
 
 .nq-scan-content {
   justify-content: flex-start;
-  padding-top: 58px;
+  padding-top: 36px;
 }
 
 .nq-qr-frame {
@@ -1878,7 +1872,7 @@
 
 @media (max-width: 420px) {
   .nq-scan-content {
-    padding-top: 46px;
+    padding-top: 30px;
   }
 
   .nq-qr-frame {
@@ -2065,19 +2059,19 @@
 .nq-generated-qr-image.nq-generated-qr-image-large,
 .nq-generated-qr-image {
   display: block !important;
-  width: min(88vw, 370px) !important;
-  height: min(88vw, 370px) !important;
-  max-width: 370px !important;
-  max-height: 370px !important;
-  min-width: 300px !important;
-  min-height: 300px !important;
-  padding: 16px !important;
-  border-radius: 30px !important;
+  width: min(74vw, 280px) !important;
+  height: min(74vw, 280px) !important;
+  max-width: 280px !important;
+  max-height: 280px !important;
+  min-width: 220px !important;
+  min-height: 220px !important;
+  padding: 12px !important;
+  border-radius: 24px !important;
   background: #ffffff !important;
   object-fit: contain !important;
   border: 1px solid rgba(15, 23, 42, 0.08) !important;
   box-shadow:
-    0 18px 44px rgba(15, 23, 42, 0.18),
+    0 14px 34px rgba(15, 23, 42, 0.15),
     inset 0 0 0 1px rgba(15, 23, 42, 0.08) !important;
 }
 
@@ -2085,12 +2079,12 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  width: min(88vw, 370px) !important;
-  max-width: 370px !important;
-  min-height: 52px !important;
+  width: min(74vw, 280px) !important;
+  max-width: 280px !important;
+  min-height: 46px !important;
   margin: 0 auto 4px !important;
-  border-radius: 20px !important;
-  font-size: 14px !important;
+  border-radius: 18px !important;
+  font-size: 13px !important;
   font-weight: 950 !important;
   text-align: center !important;
   cursor: pointer !important;
@@ -2192,6 +2186,7 @@
 }
 
 @media (max-width: 420px) {
+
   .nq-generated-qr-image.nq-generated-qr-image-large,
   .nq-generated-qr-image {
     width: min(90vw, 350px) !important;
@@ -2219,6 +2214,7 @@
     border-radius: 26px !important;
   }
 }
+
 /* ============================================
    QR normal size restored
    Keep fullscreen option active
@@ -2273,4 +2269,68 @@
     max-width: 390px !important;
     max-height: 390px !important;
   }
+}
+
+.nq-receipt-status-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-width: 92px;
+  margin: 0 auto 18px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: rgba(148, 163, 184, 0.16);
+  color: #475569;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+}
+
+.nq-receipt-status-badge.status-paid {
+  background: rgba(34, 197, 94, 0.14);
+  color: #15803d;
+  border-color: rgba(34, 197, 94, 0.28);
+}
+
+.nq-receipt-status-badge.status-active {
+  background: rgba(0, 122, 255, 0.12);
+  color: #0369a1;
+  border-color: rgba(0, 122, 255, 0.24);
+}
+
+.nq-receipt-status-badge.status-expired {
+  background: rgba(245, 158, 11, 0.14);
+  color: #b45309;
+  border-color: rgba(245, 158, 11, 0.28);
+}
+
+.nq-receipt-status-badge.status-cancelled {
+  background: rgba(239, 68, 68, 0.12);
+  color: #b91c1c;
+  border-color: rgba(239, 68, 68, 0.24);
+}
+
+.nq-receipt-qr-card {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  margin: 0 0 20px;
+  padding: 16px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.nq-receipt-qr-image {
+  display: block;
+  width: min(64vw, 220px);
+  height: min(64vw, 220px);
+  padding: 10px;
+  border-radius: 20px;
+  background: #ffffff;
+  object-fit: contain;
+  border: 1px solid rgba(15, 23, 42, 0.08);
 }

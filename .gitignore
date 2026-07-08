@@ -1,1 +1,7 @@
 .env.local
+
+# Local backups and downloaded artifacts
+app-final-testnet-before-submit/
+app-working-testnet-payment/
+*.zip
+*:Zone.Identifier

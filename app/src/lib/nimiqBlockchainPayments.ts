@@ -8,6 +8,7 @@ export type SafePayBlockchainPayment = {
   senderAddress?: string
   recipientAddress?: string
   amountLuna?: number
+  timestamp?: number
   data?: string
   raw: unknown
 }
@@ -159,6 +160,10 @@ function getNumberField(
   return undefined
 }
 
+function getTransactionTimestamp(value: Record<string, unknown>): number | undefined {
+  return getNumberField(value, ['timestamp', 'blockTimestamp'])
+}
+
 function getTransactionDataCandidates(
   value: Record<string, unknown>,
 ): string[] {
@@ -198,6 +203,8 @@ function transactionMatches(params: {
   recipientAddress: string
   amountLuna: number
   expectedData: string
+  minTimestampMs?: number
+  maxTimestampMs?: number
 }): boolean {
   const recipient = getStringField(params.tx, [
     'to',
@@ -207,7 +214,20 @@ function transactionMatches(params: {
   ])
 
   const value = getNumberField(params.tx, ['value', 'amount'])
+  const timestamp = getTransactionTimestamp(params.tx)
   const dataCandidates = getTransactionDataCandidates(params.tx)
+
+  if (params.minTimestampMs !== undefined) {
+    if (timestamp === undefined || timestamp < params.minTimestampMs) {
+      return false
+    }
+  }
+
+  if (params.maxTimestampMs !== undefined) {
+    if (timestamp === undefined || timestamp > params.maxTimestampMs) {
+      return false
+    }
+  }
 
   return (
     normalizeAddress(recipient) === normalizeAddress(params.recipientAddress) &&
@@ -283,6 +303,8 @@ export async function findSafePayPaymentOnNimiqBlockchain(params: {
   amountNim: string | number
   intentHash: string | null | undefined
   maxTransactions?: number
+  minTimestampMs?: number
+  maxTimestampMs?: number
 }): Promise<SafePayBlockchainPayment | null> {
   const amountLuna = Number(nimToLunaString(params.amountNim))
 
@@ -309,6 +331,8 @@ export async function findSafePayPaymentOnNimiqBlockchain(params: {
         recipientAddress: params.recipientAddress,
         amountLuna,
         expectedData,
+        minTimestampMs: params.minTimestampMs,
+        maxTimestampMs: params.maxTimestampMs,
       })
     ) {
       return {
@@ -329,6 +353,7 @@ export async function findSafePayPaymentOnNimiqBlockchain(params: {
           'toAddress',
         ]),
         amountLuna,
+        timestamp: getTransactionTimestamp(tx),
         data: expectedData,
         raw: entry,
       }
