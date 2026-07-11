@@ -122,6 +122,21 @@ function formatOrderExpiration(value?: string) {
   }
 }
 
+
+function normalizeNimiqAddress(address?: string | null) {
+  return (address ?? '').replace(/\s+/g, '').toUpperCase()
+}
+
+function isSameNimiqAddress(
+  firstAddress?: string | null,
+  secondAddress?: string | null,
+) {
+  const first = normalizeNimiqAddress(firstAddress)
+  const second = normalizeNimiqAddress(secondAddress)
+
+  return first.length > 0 && second.length > 0 && first === second
+}
+
 function getVerificationTitle(reviewStatus: ReviewStatus) {
   if (reviewStatus === 'verified') return 'SafePay verified'
   if (reviewStatus === 'verifying') return 'Checking request...'
@@ -145,7 +160,7 @@ function getVerificationDescription(reviewStatus: ReviewStatus) {
   return 'Review this request, then verify it before paying.'
 }
 
-function getBusinessOrderStatusLabel(status: SafePayBusinessOrderRecord['status']) {
+function getBusinessOrderStatusLabel(status?: string | null) {
   if (status === 'paid') return 'Paid'
   if (status === 'expired') return 'Expired'
   if (status === 'cancelled') return 'Cancelled'
@@ -153,7 +168,7 @@ function getBusinessOrderStatusLabel(status: SafePayBusinessOrderRecord['status'
   return 'Active'
 }
 
-function getBusinessOrderStatusNote(status: SafePayBusinessOrderRecord['status']) {
+function getBusinessOrderStatusNote(status?: string | null) {
   if (status === 'paid') return 'Payment confirmed on blockchain'
   if (status === 'expired') return 'Request expired without payment'
   if (status === 'cancelled') return 'Request cancelled by business'
@@ -227,6 +242,7 @@ export function NimiqPayFlowShell({
 
   const [showActivity, setShowActivity] = useState(false)
   const [showBusinessOrders, setShowBusinessOrders] = useState(false)
+  const [copiedTxHash, setCopiedTxHash] = useState(false)
   const [activityItems, setActivityItems] = useState<SafePayActivityItem[]>(() =>
     getSafePayActivity(),
   )
@@ -240,6 +256,7 @@ export function NimiqPayFlowShell({
   const paidTxHash = activeRequestPaidTxHash ?? txHash
   const activeOrderIsPaid =
     activeRequestPaid || activeSafePayOrder?.status === 'paid'
+  const isSelfPayment = isSameNimiqAddress(paymentReview?.recipient, nimiqAccount)
 
   const intentHash = paymentReview?.intentHash ?? proofPublicInputs[0] ?? null
   const nullifier = paymentReview?.nullifier ?? proofPublicInputs[1] ?? null
@@ -249,6 +266,7 @@ export function NimiqPayFlowShell({
     reviewStatus === 'verified' &&
     nimiqConnected &&
     !activeOrderIsPaid &&
+    !isSelfPayment &&
     !blockchainPaymentChecking &&
     !paymentReview.isExpired &&
     !paymentStatus.sending &&
@@ -525,11 +543,44 @@ export function NimiqPayFlowShell({
   async function handleOpenBusinessReceipt(record: SafePayBusinessOrderRecord) {
     await onOpenBusinessOrder(record)
 
+    setCopiedTxHash(false)
     setShowBusinessOrders(false)
     setShowCreateQr(false)
     setShowQrFullscreen(false)
     setShowOrderReceipt(true)
     setScreen('business')
+  }
+
+  function copyTextWithFallback(value: string) {
+    const textarea = document.createElement('textarea')
+    textarea.value = value
+    textarea.setAttribute('readonly', 'true')
+    textarea.style.position = 'fixed'
+    textarea.style.left = '-9999px'
+    document.body.appendChild(textarea)
+    textarea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textarea)
+  }
+
+  async function copyTxHashToClipboard(value?: string | null) {
+    if (!value) return
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(value)
+      } else {
+        copyTextWithFallback(value)
+      }
+
+      setCopiedTxHash(true)
+
+      window.setTimeout(() => {
+        setCopiedTxHash(false)
+      }, 1800)
+    } catch {
+      setCopiedTxHash(false)
+    }
   }
 
   function closeFlow() {
@@ -542,6 +593,7 @@ export function NimiqPayFlowShell({
     setShowCreateQr(false)
     setShowQrFullscreen(false)
     setShowOrderReceipt(false)
+    setCopiedTxHash(false)
     setReturningToNimiqPay(false)
     autoVerifyLockRef.current = false
     pendingRequestNavigationRef.current = null
@@ -631,6 +683,10 @@ export function NimiqPayFlowShell({
       return
     }
 
+    if (isSelfPayment) {
+      return
+    }
+
     if (reviewStatus === 'verified') {
       onSendPayment()
     }
@@ -640,6 +696,7 @@ export function NimiqPayFlowShell({
     if (paymentStatus.sending) return 'Opening Nimiq Pay...'
     if (paymentStatus.sent) return 'Payment Sent'
     if (activeOrderIsPaid) return 'Already paid'
+    if (isSelfPayment) return 'Self-payment blocked'
     if (blockchainPaymentChecking) return 'Checking payment...'
     if (!paymentReview) return 'PAY'
     if (reviewStatus === 'verifying') return 'Checking request...'
@@ -769,6 +826,15 @@ export function NimiqPayFlowShell({
                   <span>Paid on {latestPaidBusinessOrder.network}</span>
                   <strong>Tx {shortHash(latestPaidBusinessOrder.txHash)}</strong>
                 </div>
+
+                {latestPaidBusinessOrder.txHash && (
+                  <button
+                    type="button"
+                    onClick={() => copyTxHashToClipboard(latestPaidBusinessOrder.txHash)}
+                  >
+                    {copiedTxHash ? 'Copied' : 'Copy tx hash'}
+                  </button>
+                )}
 
                 <button
                   type="button"
@@ -1051,6 +1117,11 @@ export function NimiqPayFlowShell({
             )}
 
             {reviewError && <div className="nq-error-text">{reviewError}</div>}
+            {isSelfPayment && (
+              <div className="nq-error-text">
+                You cannot pay your own SafePay request. Use a different wallet to complete this payment.
+              </div>
+            )}
             {paymentStatus.error && (
               <div className="nq-error-text">{paymentStatus.error}</div>
             )}
@@ -1065,6 +1136,7 @@ export function NimiqPayFlowShell({
                 paymentStatus.sending ||
                 paymentStatus.sent ||
                 activeOrderIsPaid ||
+                isSelfPayment ||
                 blockchainPaymentChecking ||
                 reviewStatus === 'verifying' ||
                 (reviewStatus === 'verified' && !canPay && nimiqConnected)
@@ -1107,16 +1179,23 @@ export function NimiqPayFlowShell({
                 <h2>Order receipt</h2>
                 <p>
                   {activeOrderIsPaid
-                    ? 'This wallet has already paid this SafePay request.'
-                    : screen === 'business'
-                      ? 'This payment request is ready for the customer to scan.'
-                      : 'Review this SafePay request before verification.'}
+                    ? 'Payment confirmed on blockchain.'
+                    : activeSafePayOrder.status === 'expired'
+                      ? 'This SafePay request expired without payment.'
+                      : activeSafePayOrder.status === 'cancelled'
+                        ? 'This SafePay request was cancelled.'
+                        : screen === 'business'
+                          ? 'This payment request is ready for the customer to scan.'
+                          : 'Review this SafePay request before verification.'}
                 </p>
               </div>
 
               <button
                 className="nq-activity-close"
-                onClick={() => setShowOrderReceipt(false)}
+                onClick={() => {
+                  setCopiedTxHash(false)
+                  setShowOrderReceipt(false)
+                }}
               >
                 ×
               </button>
@@ -1205,13 +1284,31 @@ export function NimiqPayFlowShell({
 
               <div>
                 <span>Status</span>
-                <strong>{activeOrderIsPaid ? 'paid' : activeSafePayOrder.status}</strong>
+                <strong>
+                  {activeOrderIsPaid
+                    ? 'Paid'
+                    : getBusinessOrderStatusLabel(activeSafePayOrder.status)}
+                </strong>
               </div>
+
+              {activeOrderIsPaid && (
+                <div>
+                  <span>Confirmation</span>
+                  <strong>Payment confirmed on blockchain</strong>
+                </div>
+              )}
 
               {paidTxHash && (
                 <div>
                   <span>Paid tx</span>
                   <strong>{shortHash(paidTxHash)}</strong>
+                  <button
+                    className="nq-primary-mini-btn"
+                    type="button"
+                    onClick={() => copyTxHashToClipboard(paidTxHash)}
+                  >
+                    {copiedTxHash ? 'Copied' : 'Copy tx hash'}
+                  </button>
                 </div>
               )}
             </div>
@@ -1220,9 +1317,12 @@ export function NimiqPayFlowShell({
               <button
                 className="nq-primary-btn"
                 type="button"
-                onClick={() => setShowOrderReceipt(false)}
+                onClick={() => {
+                  setCopiedTxHash(false)
+                  setShowOrderReceipt(false)
+                }}
               >
-                {activeOrderIsPaid ? 'Already paid' : 'Close'}
+                {activeOrderIsPaid ? 'Close receipt' : 'Close'}
               </button>
             ) : (
               <button

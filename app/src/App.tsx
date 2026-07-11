@@ -74,6 +74,21 @@ function getFriendlyPaymentLinkError(link: string) {
 }
 
 
+
+function normalizeNimiqAddress(address?: string | null) {
+  return (address ?? '').replace(/\s+/g, '').toUpperCase()
+}
+
+function isSameNimiqAddress(
+  firstAddress?: string | null,
+  secondAddress?: string | null,
+) {
+  const first = normalizeNimiqAddress(firstAddress)
+  const second = normalizeNimiqAddress(secondAddress)
+
+  return first.length > 0 && second.length > 0 && first === second
+}
+
 async function waitForDemoVerification(timeoutMs = 650): Promise<void> {
   await new Promise<void>((resolve) => {
     window.setTimeout(resolve, timeoutMs)
@@ -835,6 +850,12 @@ function App() {
     const intentHash = status.publicInputs[0] ?? demoPoseidonPublicValues.intentHash
     const requestKey = activeSafePayOrder?.id ?? null
     const payerAddress = nimiqProvider.account
+
+    if (isSameNimiqAddress(paymentReview.recipient, payerAddress)) {
+      throw new Error(
+        'You cannot pay your own SafePay request. Use a different wallet to complete this payment.',
+      )
+    }
 
     if (requestKey && payerAddress) {
       const paidRecord = getSafePayPaidRequest({
