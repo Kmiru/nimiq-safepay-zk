@@ -2334,3 +2334,812 @@
   object-fit: contain;
   border: 1px solid rgba(15, 23, 42, 0.08);
 }
+
+/* ============================================
+   Nimiq UI Polish v1
+   SafePay ZK visual polish only.
+   Keep this block at the END so it overrides older styles.
+   ============================================ */
+
+.nq-pay-shell {
+  --nq-bg: #f4f7f9;
+  --nq-bg-2: #eef4f7;
+  --nq-card: rgba(255, 255, 255, 0.94);
+  --nq-card-strong: #ffffff;
+  --nq-text: #1f2348;
+  --nq-muted: #6d7891;
+  --nq-border: rgba(31, 35, 72, 0.10);
+  --nq-border-strong: rgba(31, 35, 72, 0.16);
+  --nq-yellow: #fbc02d;
+  --nq-yellow-2: #ffdd66;
+  --nq-orange: #ff8f00;
+  --nq-blue: #0582ca;
+  --nq-blue-2: #00b7ff;
+  --nq-green: #21c977;
+  --nq-red: #e53935;
+  --nq-purple: #6c5ce7;
+  --nq-radius-sm: 16px;
+  --nq-radius-md: 22px;
+  --nq-radius-lg: 30px;
+  --nq-radius-xl: 36px;
+  --nq-ease: cubic-bezier(0.25, 0, 0, 1);
+  --nq-shadow:
+    0 24px 70px rgba(31, 35, 72, 0.12),
+    0 8px 24px rgba(31, 35, 72, 0.06);
+  --nq-shadow-soft: 0 14px 34px rgba(31, 35, 72, 0.08);
+
+  font-family: var(--nq-font-sans, 'Muli', Arial, sans-serif);
+  background:
+    radial-gradient(circle at top left, rgba(0, 183, 255, 0.24), transparent 22rem),
+    radial-gradient(circle at 88% 8%, rgba(251, 192, 45, 0.24), transparent 18rem),
+    linear-gradient(180deg, var(--nq-bg) 0%, var(--nq-bg-2) 100%) !important;
+}
+
+.nq-pay-slider {
+  transition: transform 0.36s var(--nq-ease) !important;
+}
+
+.nq-pay-screen {
+  padding-top: max(22px, env(safe-area-inset-top)) !important;
+}
+
+.nq-screen-content {
+  max-width: 430px !important;
+}
+
+.nq-screen-title,
+.nq-header-title,
+.nq-app-name,
+.nq-mode-page-hero h2,
+.nq-activity-header h2 {
+  color: var(--nq-text) !important;
+  letter-spacing: -0.045em !important;
+}
+
+.nq-screen-subtitle,
+.nq-app-tagline,
+.nq-mode-page-hero p,
+.nq-mode-note,
+.nq-activity-header p,
+.nq-generated-qr-info span,
+.nq-receipt-line span,
+.nq-receipt-meta-card span {
+  color: var(--nq-muted) !important;
+}
+
+.nq-back-btn,
+.nq-close-btn,
+.nq-activity-close,
+.nq-qr-fullscreen-close {
+  background: rgba(255, 255, 255, 0.92) !important;
+  color: var(--nq-text) !important;
+  border: 1px solid rgba(31, 35, 72, 0.08) !important;
+  box-shadow: var(--nq-shadow-soft) !important;
+  backdrop-filter: blur(14px);
+}
+
+.nq-app-logo {
+  width: 128px !important;
+  height: 128px !important;
+  border-radius: 34px !important;
+  box-shadow:
+    0 22px 48px rgba(31, 35, 72, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65) !important;
+}
+
+.nq-app-name {
+  font-size: 34px !important;
+  font-weight: 900 !important;
+}
+
+.nq-app-tagline {
+  max-width: 320px;
+  line-height: 1.45 !important;
+}
+
+/* Home mode cards */
+.nq-mode-grid {
+  gap: 14px !important;
+  max-width: 360px !important;
+}
+
+.nq-mode-card {
+  min-height: 148px !important;
+  border-radius: 32px !important;
+  padding: 18px !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 250, 252, 0.92)) !important;
+  border: 1px solid rgba(31, 35, 72, 0.08) !important;
+  color: var(--nq-text) !important;
+  box-shadow: var(--nq-shadow-soft) !important;
+  font-family: var(--nq-font-sans, 'Muli', Arial, sans-serif) !important;
+  transition:
+    transform 0.18s var(--nq-ease),
+    box-shadow 0.18s var(--nq-ease),
+    border-color 0.18s var(--nq-ease) !important;
+}
+
+.nq-mode-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: var(--nq-shadow) !important;
+}
+
+.nq-mode-card::after {
+  height: 4px !important;
+  border-radius: 999px !important;
+  background-image: linear-gradient(90deg, var(--grad)) !important;
+}
+
+.nq-mode-card.business {
+  --grad: var(--nq-yellow), var(--nq-orange);
+}
+
+.nq-mode-card.personal {
+  --grad: var(--nq-blue-2), var(--nq-green);
+}
+
+.nq-mode-title {
+  color: var(--nq-text) !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.02em !important;
+  text-transform: none !important;
+}
+
+.nq-mode-card-content {
+  color: var(--nq-muted) !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+}
+
+/* Buttons */
+.nq-primary-btn,
+.nq-primary-mini-btn,
+.nq-pay-btn,
+.nq-home-pay-btn {
+  color: #4b3300 !important;
+  background:
+    linear-gradient(135deg, var(--nq-yellow-2) 0%, var(--nq-yellow) 48%, var(--nq-orange) 100%) !important;
+  border: 0 !important;
+  box-shadow: 0 16px 34px rgba(255, 143, 0, 0.24) !important;
+  transition:
+    transform 0.16s var(--nq-ease),
+    box-shadow 0.16s var(--nq-ease),
+    opacity 0.16s var(--nq-ease) !important;
+}
+
+.nq-home-create-btn,
+.nq-link-btn,
+.nq-create-qr-link,
+.nq-activity-link {
+  color: var(--nq-blue) !important;
+}
+
+.nq-home-create-btn,
+.nq-mode-action-list .nq-link-btn {
+  background: rgba(255, 255, 255, 0.90) !important;
+  border: 1px solid rgba(5, 130, 202, 0.16) !important;
+  box-shadow: 0 12px 28px rgba(31, 35, 72, 0.06) !important;
+}
+
+.nq-primary-btn:hover:not(:disabled),
+.nq-primary-mini-btn:hover:not(:disabled),
+.nq-pay-btn:hover:not(:disabled),
+.nq-home-pay-btn:hover:not(:disabled),
+.nq-home-create-btn:hover:not(:disabled) {
+  transform: translateY(-1px) !important;
+}
+
+.nq-primary-btn:disabled,
+.nq-pay-btn:disabled,
+.nq-home-pay-btn:disabled,
+.nq-home-create-btn:disabled {
+  opacity: 0.48 !important;
+}
+
+/* Wallet and preview cards */
+.nq-wallet-status,
+.nq-wallet-preview,
+.nq-wallet-card,
+.nq-preview-card,
+.nq-technical-card,
+.nq-sent-hash,
+.nq-incoming-request-card,
+.nq-create-qr-sheet,
+.nq-activity-sheet,
+.nq-order-receipt-sheet,
+.nq-receipt-meta-card,
+.nq-order-summary-card,
+.nq-generated-qr-panel {
+  background: var(--nq-card) !important;
+  border-color: var(--nq-border) !important;
+  box-shadow: var(--nq-shadow-soft) !important;
+  backdrop-filter: blur(16px);
+}
+
+.nq-wallet-status {
+  min-height: 40px !important;
+  padding: 10px 15px !important;
+  color: var(--nq-blue) !important;
+}
+
+.nq-wallet-status.connected {
+  color: var(--nq-green) !important;
+  border-color: rgba(33, 201, 119, 0.22) !important;
+}
+
+.nq-wallet-status.disconnect {
+  color: #b86b00 !important;
+  border-color: rgba(255, 143, 0, 0.24) !important;
+}
+
+.nq-wallet-card {
+  border-radius: 24px !important;
+}
+
+/* Forms */
+.nq-request-input,
+.nq-pos-input {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border-color: var(--nq-border) !important;
+  color: var(--nq-text) !important;
+  box-shadow: 0 8px 22px rgba(31, 35, 72, 0.04) !important;
+}
+
+.nq-request-input:focus,
+.nq-pos-input:focus {
+  border-color: rgba(5, 130, 202, 0.36) !important;
+  box-shadow:
+    0 0 0 4px rgba(0, 183, 255, 0.10),
+    0 8px 22px rgba(31, 35, 72, 0.04) !important;
+}
+
+/* Status / notices */
+.nq-safepay-status {
+  border-color: rgba(5, 130, 202, 0.12) !important;
+}
+
+.nq-safepay-status.status-verified,
+.nq-safepay-status.status-verified strong,
+.nq-safepay-status.status-verified .nq-safepay-icon {
+  color: var(--nq-green) !important;
+}
+
+.nq-safepay-status.status-verifying {
+  border-color: rgba(251, 192, 45, 0.26) !important;
+}
+
+.nq-safepay-status.status-verifying .nq-safepay-icon {
+  background: rgba(251, 192, 45, 0.16) !important;
+  color: #b86b00 !important;
+}
+
+.nq-safepay-status.status-verifying strong {
+  color: #b86b00 !important;
+}
+
+.nq-safepay-status.status-failed {
+  border-color: rgba(229, 57, 53, 0.24) !important;
+}
+
+.nq-safepay-status.status-failed .nq-safepay-icon,
+.nq-safepay-status.status-failed strong {
+  color: var(--nq-red) !important;
+}
+
+.nq-error-text {
+  padding: 10px 12px !important;
+  border-radius: 16px !important;
+  background: rgba(229, 57, 53, 0.08) !important;
+  border: 1px solid rgba(229, 57, 53, 0.16) !important;
+  color: #b42318 !important;
+}
+
+.nq-pos-warning,
+.nq-mode-note {
+  border-color: rgba(251, 192, 45, 0.30) !important;
+  background: rgba(251, 192, 45, 0.13) !important;
+  color: #8a5a00 !important;
+}
+
+/* Receipt polish */
+.nq-receipt-hero {
+  background:
+    radial-gradient(circle at top, rgba(251, 192, 45, 0.22), transparent 44%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 250, 252, 0.96)) !important;
+  border-color: var(--nq-border) !important;
+  box-shadow: 0 14px 34px rgba(31, 35, 72, 0.06) !important;
+}
+
+.nq-receipt-hero strong {
+  color: var(--nq-text) !important;
+}
+
+.nq-receipt-status-badge {
+  box-shadow: 0 8px 22px rgba(31, 35, 72, 0.05) !important;
+}
+
+.nq-receipt-status-badge.status-paid {
+  background: rgba(33, 201, 119, 0.14) !important;
+  color: #148a4b !important;
+  border-color: rgba(33, 201, 119, 0.28) !important;
+}
+
+.nq-receipt-status-badge.status-active {
+  background: rgba(0, 183, 255, 0.12) !important;
+  color: #05699f !important;
+  border-color: rgba(0, 183, 255, 0.24) !important;
+}
+
+.nq-receipt-status-badge.status-expired {
+  background: rgba(251, 192, 45, 0.16) !important;
+  color: #9a6500 !important;
+  border-color: rgba(251, 192, 45, 0.32) !important;
+}
+
+.nq-receipt-status-badge.status-cancelled {
+  background: rgba(229, 57, 53, 0.10) !important;
+  color: #b42318 !important;
+  border-color: rgba(229, 57, 53, 0.22) !important;
+}
+
+.nq-receipt-total {
+  background: linear-gradient(135deg, rgba(251, 192, 45, 0.16), rgba(255, 143, 0, 0.08)) !important;
+  border-color: rgba(251, 192, 45, 0.28) !important;
+}
+
+.nq-incoming-request-card button {
+  background: linear-gradient(135deg, var(--nq-text), #111936) !important;
+  color: #ffffff !important;
+}
+
+/* Activity / order history */
+.nq-activity-item {
+  background: rgba(255, 255, 255, 0.76) !important;
+  border-color: var(--nq-border) !important;
+  box-shadow: 0 8px 22px rgba(31, 35, 72, 0.04) !important;
+}
+
+.nq-clear-activity {
+  background: rgba(229, 57, 53, 0.08) !important;
+  color: #b42318 !important;
+}
+
+/* Technical hashes and addresses */
+.nq-activity-meta span,
+.nq-incoming-request-meta span,
+.nq-receipt-meta-card strong,
+.nq-preview-row strong,
+.nq-sent-hash code,
+.nq-created-link-details code {
+  font-family: var(--nq-font-mono, 'Fira Mono', 'SFMono-Regular', Consolas, monospace);
+}
+
+/* Keep scanner and QR stable, just polish border colors */
+.nq-qr-frame {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.10),
+    0 22px 50px rgba(31, 35, 72, 0.18) !important;
+}
+
+.nq-qr-corners::before {
+  border-top-color: var(--nq-yellow) !important;
+  border-left-color: var(--nq-yellow) !important;
+}
+
+.nq-qr-corners::after {
+  border-right-color: var(--nq-blue-2) !important;
+  border-bottom-color: var(--nq-green) !important;
+}
+
+@media (max-width: 420px) {
+  .nq-pay-screen {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  .nq-mode-card {
+    border-radius: 28px !important;
+  }
+
+  .nq-app-logo {
+    width: 112px !important;
+    height: 112px !important;
+    border-radius: 30px !important;
+  }
+}
+
+
+/* ============================================
+   Nimiq-style QR Scanner Polish v1
+   Visual-only override. Keep at the END of the file.
+   ============================================ */
+
+.nq-scan-content {
+  position: relative;
+  justify-content: flex-start;
+  padding-top: 52px;
+  isolation: isolate;
+}
+
+.nq-scan-content::before {
+  content: '';
+  position: absolute;
+  inset: -24px -20px auto;
+  height: 260px;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(255, 215, 105, 0.45), transparent 34%),
+    radial-gradient(circle at 85% 20%, rgba(31, 120, 165, 0.24), transparent 38%),
+    radial-gradient(circle at 52% 8%, rgba(35, 183, 139, 0.18), transparent 34%);
+  filter: blur(4px);
+  pointer-events: none;
+}
+
+.nq-scan-content .nq-screen-title {
+  max-width: 330px;
+  margin-inline: auto;
+  color: var(--nq-text);
+  font-size: 26px;
+  font-weight: 950;
+  letter-spacing: -0.055em;
+}
+
+.nq-scan-content .nq-screen-subtitle {
+  max-width: 320px;
+  margin: 9px auto 18px;
+  color: var(--nq-muted);
+  font-size: 13px;
+  line-height: 1.42;
+  font-weight: 800;
+}
+
+.nq-scan-content .nq-qr-frame {
+  position: relative;
+  width: min(84vw, 344px) !important;
+  height: auto !important;
+  aspect-ratio: 1 / 1;
+  margin: 16px auto 18px !important;
+  padding: 12px !important;
+  border: 2px solid transparent;
+  border-radius: 36px !important;
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    conic-gradient(from 160deg, #f6c343, #ff8c1a, #1f78a5, #22a873, #f6c343) border-box !important;
+  box-shadow:
+    0 28px 70px rgba(31, 41, 51, 0.18),
+    0 10px 24px rgba(246, 195, 67, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+  overflow: visible !important;
+}
+
+.nq-scan-content .nq-qr-frame::before {
+  content: 'SafePay Scanner';
+  position: absolute;
+  left: 50%;
+  top: -15px;
+  transform: translateX(-50%);
+  z-index: 5;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--nq-blue);
+  border: 1px solid rgba(31, 120, 165, 0.14);
+  box-shadow: 0 10px 28px rgba(31, 41, 51, 0.1);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.nq-scan-content .nq-qr-frame.active::before {
+  content: 'Scanning QR';
+  color: var(--nq-green);
+  border-color: rgba(34, 168, 115, 0.22);
+}
+
+.nq-scan-content .nq-qr-corners {
+  position: relative;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 28px !important;
+  overflow: hidden !important;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(31, 120, 165, 0.18), transparent 38%),
+    #07111f !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+    inset 0 -26px 80px rgba(0, 0, 0, 0.3);
+}
+
+.nq-scan-content .nq-qr-corners::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: 18px !important;
+  z-index: 4 !important;
+  border: 2px solid rgba(255, 255, 255, 0.22) !important;
+  border-radius: 22px !important;
+  background:
+    linear-gradient(90deg, #f6c343 0 26px, transparent 26px calc(100% - 26px), #1f78a5 calc(100% - 26px)) top left / 100% 3px no-repeat,
+    linear-gradient(90deg, #22a873 0 26px, transparent 26px calc(100% - 26px), #f6c343 calc(100% - 26px)) bottom left / 100% 3px no-repeat,
+    linear-gradient(#f6c343 0 26px, transparent 26px calc(100% - 26px), #22a873 calc(100% - 26px)) top left / 3px 100% no-repeat,
+    linear-gradient(#1f78a5 0 26px, transparent 26px calc(100% - 26px), #f6c343 calc(100% - 26px)) top right / 3px 100% no-repeat !important;
+  pointer-events: none !important;
+}
+
+.nq-scan-content .nq-qr-corners::after {
+  content: '' !important;
+  position: absolute !important;
+  left: 22px !important;
+  right: 22px !important;
+  top: 24px !important;
+  z-index: 5 !important;
+  display: none;
+  height: 3px !important;
+  border-radius: 999px !important;
+  background: linear-gradient(90deg, transparent, rgba(246, 195, 67, 0.98), rgba(31, 120, 165, 0.95), transparent) !important;
+  box-shadow:
+    0 0 18px rgba(246, 195, 67, 0.45),
+    0 0 28px rgba(31, 120, 165, 0.36) !important;
+  pointer-events: none !important;
+}
+
+.nq-scan-content .nq-qr-frame.active .nq-qr-corners::after {
+  display: block;
+  animation: safepayNimiqScanLine 2.15s cubic-bezier(0.25, 0, 0, 1) infinite;
+}
+
+.nq-scan-content .nq-video-preview {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  border-radius: 28px !important;
+  object-fit: cover !important;
+  background: #07111f !important;
+  opacity: 0;
+  filter: saturate(1.08) contrast(1.02);
+}
+
+.nq-scan-content .nq-video-preview.active {
+  opacity: 1 !important;
+}
+
+.nq-scan-content .nq-qr-placeholder {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 3 !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 28px !important;
+  color: rgba(255, 255, 255, 0.88) !important;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(246, 195, 67, 0.22), transparent 30%),
+    radial-gradient(circle at 50% 64%, rgba(31, 120, 165, 0.2), transparent 36%),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 18px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 18px),
+    #07111f !important;
+  font-size: 26px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.12em !important;
+  text-shadow: 0 10px 28px rgba(0, 0, 0, 0.32);
+}
+
+.nq-scan-content .nq-qr-frame.active .nq-qr-placeholder {
+  display: none !important;
+}
+
+.nq-scan-content .nq-primary-mini-btn {
+  min-height: 44px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--nq-blue);
+  border: 1px solid rgba(31, 120, 165, 0.16);
+  box-shadow: 0 14px 32px rgba(31, 41, 51, 0.1);
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.nq-scan-content .nq-error-text {
+  width: min(100%, 330px);
+  margin: 10px auto 0;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.18);
+}
+
+@keyframes safepayNimiqScanLine {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: translateY(calc(min(84vw, 344px) - 72px));
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nq-scan-content .nq-qr-frame.active .nq-qr-corners::after {
+    animation: none;
+    top: 50% !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .nq-scan-content {
+    padding-top: 44px;
+  }
+
+  .nq-scan-content .nq-screen-title {
+    font-size: 24px;
+  }
+
+  .nq-scan-content .nq-qr-frame {
+    width: min(86vw, 318px) !important;
+    border-radius: 32px !important;
+    padding: 10px !important;
+  }
+
+  .nq-scan-content .nq-qr-corners,
+  .nq-scan-content .nq-video-preview,
+  .nq-scan-content .nq-qr-placeholder {
+    border-radius: 24px !important;
+  }
+
+  @keyframes safepayNimiqScanLine {
+    0% {
+      transform: translateY(0);
+      opacity: 0;
+    }
+    12% {
+      opacity: 1;
+    }
+    88% {
+      opacity: 0.95;
+    }
+    100% {
+      transform: translateY(calc(min(86vw, 318px) - 68px));
+      opacity: 0;
+    }
+  }
+}
+
+/* ============================================
+   SafePay QR generated card responsive fix
+   Prevent horizontal scroll inside the Create Payment Request sheet.
+   Keep this at the END of the file so it overrides older QR rules.
+   ============================================ */
+
+.nq-create-qr-sheet,
+.nq-order-receipt-sheet,
+.nq-activity-sheet {
+  box-sizing: border-box !important;
+  width: min(100%, 430px) !important;
+  max-width: calc(100vw - 24px) !important;
+  overflow-x: hidden !important;
+}
+
+.nq-create-qr-sheet *,
+.nq-order-receipt-sheet *,
+.nq-activity-sheet * {
+  box-sizing: border-box;
+}
+
+.nq-generated-qr-panel {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow-x: hidden !important;
+  padding: 14px !important;
+  margin: 14px auto 0 !important;
+  border-radius: 24px !important;
+}
+
+.nq-generated-qr-touch-target {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+.nq-generated-qr-image {
+  display: block !important;
+  width: clamp(176px, 58vw, 212px) !important;
+  height: clamp(176px, 58vw, 212px) !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: 100% !important;
+  max-height: none !important;
+  padding: 10px !important;
+  border-radius: 22px !important;
+  object-fit: contain !important;
+}
+
+.nq-fullscreen-qr-btn {
+  width: min(100%, 212px) !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  min-height: 42px !important;
+  margin: 2px auto 4px !important;
+  padding: 10px 12px !important;
+  white-space: normal !important;
+}
+
+.nq-generated-qr-info,
+.nq-order-summary-card,
+.nq-created-link-details {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow-wrap: anywhere !important;
+}
+
+.nq-order-summary-header,
+.nq-order-line-item,
+.nq-order-total-line,
+.nq-incoming-request-meta,
+.nq-receipt-line,
+.nq-receipt-total,
+.nq-receipt-meta-card div {
+  min-width: 0 !important;
+}
+
+.nq-order-line-item span,
+.nq-order-summary-card strong,
+.nq-order-business strong,
+.nq-receipt-line strong,
+.nq-receipt-meta-card strong,
+.nq-incoming-request-card strong {
+  min-width: 0 !important;
+  overflow-wrap: anywhere !important;
+}
+
+@media (max-width: 420px) {
+  .nq-activity-overlay {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  .nq-create-qr-sheet,
+  .nq-order-receipt-sheet,
+  .nq-activity-sheet {
+    max-width: calc(100vw - 20px) !important;
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  .nq-generated-qr-panel {
+    padding: 12px !important;
+  }
+
+  .nq-generated-qr-image {
+    width: clamp(168px, 54vw, 196px) !important;
+    height: clamp(168px, 54vw, 196px) !important;
+  }
+
+  .nq-fullscreen-qr-btn {
+    width: min(100%, 196px) !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .nq-generated-qr-image {
+    width: 168px !important;
+    height: 168px !important;
+  }
+
+  .nq-fullscreen-qr-btn {
+    width: min(100%, 168px) !important;
+  }
+}

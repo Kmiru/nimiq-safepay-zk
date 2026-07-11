@@ -116,3 +116,55 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+/* ============================================
+   Nimiq UI Polish v1 globals
+   ============================================ */
+
+:root {
+  --nq-font-sans: 'Muli', Arial, sans-serif;
+  --nq-font-mono: 'Fira Mono', 'SFMono-Regular', Consolas, monospace;
+  --nq-global-bg: #f4f7f9;
+  --nq-global-text: #1f2348;
+  --nq-global-muted: #6d7891;
+  --nq-global-border: rgba(31, 35, 72, 0.10);
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--nq-font-sans);
+  background: var(--nq-global-bg);
+  color: var(--nq-global-text);
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+code,
+.counter {
+  font-family: var(--nq-font-mono);
+}
+
+
+/* SafePay mobile overflow guard */
+html,
+body,
+#root {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
